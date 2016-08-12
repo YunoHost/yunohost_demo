@@ -11,6 +11,7 @@ DOMAIN=demotest1.nohost.me
 YUNO_PWD=admin
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
+TIME_TO_SWITCH=30	# En minutes
 
 USER_DEMO=demo
 PASSWORD_DEMO=demo
@@ -173,3 +174,15 @@ server {
 EOF
 
 sudo service nginx reload
+
+# Mise en place du cron de switch
+echo | sudo tee /etc/cron.d/demo_switch <<EOF
+# Switch des conteneurs toutes les $TIME_TO_SWITCH minutes
+*/$TIME_TO_SWITCH * * * * root $script_dir/demo_switch.sh > /dev/null 2>&1
+EOF
+
+# Mise en place de HAProxy
+# [...]
+
+# Démarrage de la démo
+"./$script_dir/demo_start.sh"

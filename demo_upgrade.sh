@@ -6,11 +6,13 @@ if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$P
 PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '"' -f2)
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '"' -f2)
 LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '"' -f2)
+TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '"' -f2)
 
 UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	MACHINE=$1
 	# Attend que la machine soit éteinte.
-	sudo lxc-wait -n $MACHINE -s STOPPED #-t 2000 (Timeout à 33 minutes, puisque le swith est à 30 minutes)
+	TIME_OUT=$(($TIME_TO_SWITCH * 60 + 300))	# Timeout à $TIME_TO_SWITCH +5 minutes, en seconde
+	sudo lxc-wait -n $MACHINE -s 'STOPPED' -t $TIME_OUT
 
 	# Restaure le snapshot
 	sudo lxc-snapshot -r snap0 $MACHINE

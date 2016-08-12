@@ -30,6 +30,5 @@ echo "> Démarrage de la machine"
 sudo lxc-start -n $LXC_NAME -d
 sleep 3
 
-# Vérifie que la machine a démarré:
+# Vérifie que la machine a démarré
 sudo lxc-ls -f
-
