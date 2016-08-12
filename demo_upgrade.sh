@@ -1,12 +1,15 @@
 #!/bin/bash
 
+# Script d'upgrade des 2 conteneurs de demo.
+# Ce script n'a vocation qu'a être dans un cron
+
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '"' -f2)
-LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '"' -f2)
-LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '"' -f2)
-TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '"' -f2)
+PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
+LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
+LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
+TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '=' -f2)
 
 UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	MACHINE=$1

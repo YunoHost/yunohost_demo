@@ -1,13 +1,15 @@
 #!/bin/bash
 
+# Créer les conteneurs Yunohost et les configure
+
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-LOG_BUILD_LXC="$script_dir/Build_lxc.log"
+LOG_BUILD_LXC="/var/log/lxc_demo/Build_lxc.log"
 PLAGE_IP="10.1.5"
-IP_LXC=$PLAGE_IP.3
+IP_LXC="10.1.5.3"
 ARG_SSH="-t"
-DOMAIN=demotest1.nohost.me
+DOMAIN=demotest1.tld
 YUNO_PWD=admin
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
@@ -16,36 +18,8 @@ TIME_TO_SWITCH=30	# En minutes
 USER_DEMO=demo
 PASSWORD_DEMO=demo
 
-
-# Check root
-CHECK_ROOT=$EUID
-if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-if [ $CHECK_ROOT -eq 0 ]
-then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-   echo "Le script ne doit pas être exécuté avec les droits root"
-   exit 1
-fi
-
-echo "> Update et install lxc lxctl" | tee "$LOG_BUILD_LXC"
-sudo apt-get update >> "$LOG_BUILD_LXC" 2>&1
-sudo apt-get install -y lxc lxctl >> "$LOG_BUILD_LXC" 2>&1
-
 echo "> Création d'une machine debian jessie minimaliste" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-create -n $LXC_NAME1 -t debian -- -r jessie >> "$LOG_BUILD_LXC" 2>&1
-
-echo "> Autoriser l'ip forwarding, pour router vers la machine virtuelle." | tee -a "$LOG_BUILD_LXC"
-echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/lxc_pchecker.conf >> "$LOG_BUILD_LXC" 2>&1
-sudo sysctl -p /etc/sysctl.d/lxc_demo.conf >> "$LOG_BUILD_LXC" 2>&1
-
-echo "> Ajoute un brige réseau pour la machine virtualisée" | tee -a "$LOG_BUILD_LXC"
-echo | sudo tee /etc/network/interfaces.d/lxc_demo <<EOF >> "$LOG_BUILD_LXC" 2>&1
-auto lxc_demo
-iface lxc_demo inet static
-        address $PLAGE_IP.1/24
-        bridge_ports none
-        bridge_fd 0
-        bridge_maxwait 0
-EOF
 
 echo "> Active le bridge réseau" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
@@ -82,26 +56,13 @@ echo "127.0.0.1 $LXC_NAME1" | sudo tee -a /var/lib/lxc/$LXC_NAME1/rootfs/etc/hos
 echo "> Ajoute l'user ssh_demo (avec un mot de passe à revoir...)" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-attach -n $LXC_NAME1 -- useradd -m -p ssh_demo ssh_demo >> "$LOG_BUILD_LXC" 2>&1
 
-echo "> Autorise pchecker à utiliser sudo sans mot de passe" | tee -a "$LOG_BUILD_LXC"
-echo "pchecker    ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee -a /var/lib/lxc/$LXC_NAME1/rootfs/etc/sudoers >> "$LOG_BUILD_LXC" 2>&1
+echo "> Autorise ssh_demo à utiliser sudo sans mot de passe" | tee -a "$LOG_BUILD_LXC"
+echo "ssh_demo    ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee -a /var/lib/lxc/$LXC_NAME1/rootfs/etc/sudoers >> "$LOG_BUILD_LXC" 2>&1
 
 echo "> Mise en place de la connexion ssh vers l'invité." | tee -a "$LOG_BUILD_LXC"
-if [ -e $HOME/.ssh/$LXC_NAME1 ]; then
-	rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
-	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC
-fi
-ssh-keygen -t dsa -f $HOME/.ssh/$LXC_NAME1 -P '' >> "$LOG_BUILD_LXC" 2>&1
 sudo mkdir /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh >> "$LOG_BUILD_LXC" 2>&1
 sudo cp $HOME/.ssh/$LXC_NAME1.pub /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh/authorized_keys >> "$LOG_BUILD_LXC" 2>&1
 sudo lxc-attach -n $LXC_NAME1 -- chown ssh_demo -R /home/ssh_demo/.ssh >> "$LOG_BUILD_LXC" 2>&1
-
-echo | tee -a $HOME/.ssh/config <<EOF >> "$LOG_BUILD_LXC" 2>&1
-# ssh $LXC_NAME1
-Host $LXC_NAME1
-Hostname $IP_LXC
-User ssh_demo
-IdentityFile $HOME/.ssh/$LXC_NAME1
-EOF
 
 ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une premier connexion SSH pour valider la clé.
 if [ "$?" -ne 0 ]; then	# Si l'utilisateur tarde trop, la connexion sera refusée... ???
@@ -115,7 +76,7 @@ echo "> Post install Yunohost" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 USER_DEMO_CLEAN=${USER_DEMO//"_"/""}
-echo "> Ajout de l'utilisateur de test" | tee -a "$LOG_BUILD_LXC"
+echo "> Ajout de l'utilisateur de demo" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create --firstname \"$USER_DEMO_CLEAN\" --mail \"$USER_DEMO_CLEAN@$DOMAIN\" --lastname \"$USER_DEMO_CLEAN\" --password \"$PASSWORD_DEMO\" \"$USER_DEMO\" --admin-password=\"$YUNO_PWD\""
 
 echo -e "\n> Vérification de l'état de Yunohost" | tee -a "$LOG_BUILD_LXC"
@@ -138,51 +99,16 @@ sudo lxc-snapshot -n $LXC_NAME1 >> "$LOG_BUILD_LXC" 2>&1
 echo "> Clone la machine" | tee -a "$LOG_BUILD_LXC"
 sudo sudo lxc-clone -o $LXC_NAME1 -n $LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
 
-echo "> Mise en place du reverse proxy" | tee -a "$LOG_BUILD_LXC"
-echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF
-server {
-	listen 80;
-	listen [::]:80;
-	server_name $DOMAIN;
-
-	if (\$scheme = http) {
-		rewrite ^ https://\$server_name\$request_uri? permanent;
-	}
-
-	access_log /var/log/nginx/$DOMAIN-access.log;
-	error_log /var/log/nginx/$DOMAIN-error.log;
-}
-
-server {
-	listen 443 ssl;
-	listen [::]:443 ssl;
-	server_name $DOMAIN;
-
-	location / {
-		proxy_pass        https://$IP_LXC;
-		proxy_redirect    off;
-		proxy_set_header  Host \$host;c
-		proxy_set_header  X-Real-IP \$remote_addr;
-		proxy_set_header  X-Forwarded-Proto \$scheme;
-		proxy_set_header  X-Forwarded-For \$proxy_add_x_forwarded_for;
-		proxy_set_header  X-Forwarded-Host \$server_name;
-	}
-
-	access_log /var/log/nginx/$DOMAIN-access.log;
-	error_log /var/log/nginx/$DOMAIN-error.log;
-}
-EOF
-
-sudo service nginx reload
-
 # Mise en place du cron de switch
 echo | sudo tee /etc/cron.d/demo_switch <<EOF
 # Switch des conteneurs toutes les $TIME_TO_SWITCH minutes
 */$TIME_TO_SWITCH * * * * root $script_dir/demo_switch.sh > /dev/null 2>&1
 EOF
-
-# Mise en place de HAProxy
-# [...]
+# Et du cron d'upgrade
+echo | sudo tee /etc/cron.d/demo_upgrade <<EOF
+# Vérifie les mises à jour des conteneurs de demo, lorsqu'ils ne sont pas utilisés, à partir de 3h chaque nuit.
+0 3 * * * root $script_dir/demo_switch.sh > /dev/null 2>&1
+EOF
 
 # Démarrage de la démo
-"./$script_dir/demo_start.sh"
+"$script_dir/demo_start.sh"

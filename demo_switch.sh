@@ -1,11 +1,14 @@
 #!/bin/bash
 
+# Script de switch entre les 2 conteneurs de demo.
+# Ce script n'a vocation qu'a être dans un cron
+
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '"' -f2)
-LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '"' -f2)
-LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '"' -f2)
+PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
+LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
+LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
 
 # Vérifie l'état des machines.
 if [ $(sudo lxc-info --name $LXC_NAME1 | grep -c "STOPPED") -eq 0 ]; then	# Si la machine 1 est démarrée.
