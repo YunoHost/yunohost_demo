@@ -8,6 +8,7 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
+DOMAIN=$(cat "$script_dir/demo_lxc_build.sh" | grep DOMAIN= | cut -d '=' -f2)
 
 "$script_dir/demo_lxc_destroy.sh"
 
@@ -18,13 +19,21 @@ sudo sysctl -p
 echo "> Supprime le brige réseau"
 sudo rm /etc/network/interfaces.d/lxc_demo
 
-echo "> Remove lxc lxctl"
-sudo apt-get remove lxc lxctl
+# LXC était déjà installé sur le serveur de demo actuel. On ne l'enlève pas.
+# echo "> Remove lxc lxctl"
+# sudo apt-get remove lxc lxctl
 
-echo "> Suppression des lignes de pchecker_lxc dans .ssh/config"
-BEGIN_LINE=$(cat $HOME/.ssh/config | grep -n "^# ssh $LXC_NAME1$" | cut -d':' -f 1)
-sed -i "$BEGIN_LINE,/^# End ssh $LXC_NAME1$/d" $HOME/.ssh/config
+echo "> Suppression de la clé SSH"
+rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
+echo "> Et de sa config spécifique dans $HOME/.ssh/config"
+BEGIN_LINE=$(cat $HOME/.ssh/config | grep -n "^# ssh $LXC_NAME1" | cut -d':' -f 1)
+sed -i "$BEGIN_LINE,/^# End ssh $LXC_NAME1/d" $HOME/.ssh/config
 
-# Suppression de la clé SSH...
-# Suppression du reverse proxy ?
+## Pas de reverse proxy nécessaire sur le serveur de démo actuel.
+# Suppression du reverse proxy
+# sudo rm /etc/nginx/conf.d/$DOMAIN.conf
+# sudo service nginx reload
+
 # Suppression de la config haproxy
+# La config haproxy est modifiée manuellement.
+# On peut commenter les lignes des serveurs LXC. Et éventuellement relancer les conteneurs dockers.

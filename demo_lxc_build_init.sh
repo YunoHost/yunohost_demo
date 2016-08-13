@@ -60,53 +60,53 @@ IdentityFile $HOME/.ssh/$LXC_NAME1
 # End ssh $LXC_NAME1
 EOF
 
-echo "> Mise en place du reverse proxy" | tee -a "$LOG_BUILD_LXC"
-echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF
-server {
-	listen 80;
-	listen [::]:80;
-	server_name $DOMAIN;
-
-	if (\$scheme = http) {
-		rewrite ^ https://\$server_name\$request_uri? permanent;
-	}
-
-	access_log /var/log/nginx/$DOMAIN-access.log;
-	error_log /var/log/nginx/$DOMAIN-error.log;
-}
-
-server {
-	listen 443 ssl;
-	listen [::]:443 ssl;
-	server_name $DOMAIN;
-
-	location / {
-		proxy_pass        https://$IP_LXC1;
-		proxy_redirect    off;
-		proxy_set_header  Host \$host;
-		proxy_set_header  X-Real-IP \$remote_addr;
-		proxy_set_header  X-Forwarded-Proto \$scheme;
-		proxy_set_header  X-Forwarded-For \$proxy_add_x_forwarded_for;
-		proxy_set_header  X-Forwarded-Host \$server_name;
-	}
-
-	access_log /var/log/nginx/$DOMAIN-access.log;
-	error_log /var/log/nginx/$DOMAIN-error.log;
-}
-EOF
-
-sudo service nginx reload
+## Pas de reverse proxy nécessaire sur le serveur de démo actuel.
+# echo "> Mise en place du reverse proxy" | tee -a "$LOG_BUILD_LXC"
+# echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF
+# server {
+# 	listen 80;
+# 	listen [::]:80;
+# 	server_name $DOMAIN;
+#
+# 	if (\$scheme = http) {
+# 		rewrite ^ https://\$server_name\$request_uri? permanent;
+# 	}
+#
+# 	access_log /var/log/nginx/$DOMAIN-access.log;
+# 	error_log /var/log/nginx/$DOMAIN-error.log;
+# }
+#
+# server {
+# 	listen 443 ssl;
+# 	listen [::]:443 ssl;
+# 	server_name $DOMAIN;
+#
+# 	location / {
+# 		proxy_pass        https://$IP_LXC1;
+# 		proxy_redirect    off;
+# 		proxy_set_header  Host \$host;
+# 		proxy_set_header  X-Real-IP \$remote_addr;
+# 		proxy_set_header  X-Forwarded-Proto \$scheme;
+# 		proxy_set_header  X-Forwarded-For \$proxy_add_x_forwarded_for;
+# 		proxy_set_header  X-Forwarded-Host \$server_name;
+# 	}
+#
+# 	access_log /var/log/nginx/$DOMAIN-access.log;
+# 	error_log /var/log/nginx/$DOMAIN-error.log;
+# }
+# EOF
+#
+# sudo service nginx reload
 
 # Mise en place de HAProxy
 # [...]
-# La config de base est à pleurer... Elle est quasi vide...
-# Et la doc du site officiel est une encyclopédie en 500 tomes...
-# Modify
-#         timeout connect 5s  
-#         timeout client  30s  
-#         timeout server  10s  
-# Add
-#         maxconn 500 
+# 	server yunohost_demo1 10.1.5.3:80 check
+# 	server yunohost_demo2 10.1.5.4:80 check
+#
+# 	server yunohost_demo1 10.1.5.3:443 check
+# 	server yunohost_demo2 10.1.5.4:443 check
+# On garde la config actuelle
+# Et manuellement, on commente les lignes des conteneurs dockers et on ajoutes les lignes des ip ci-dessus pour mettre à la place les conteneurs LXC.
 
 echo "\nLe serveur est prêt à déployer les conteneurs de demo."
 echo "Exécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo."

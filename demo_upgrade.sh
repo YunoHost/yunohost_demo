@@ -6,28 +6,41 @@
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
 LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
+IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
+IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
+PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
 TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '=' -f2)
+
+IP_UPGRADE=$PLAGE_IP.150
 
 UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	MACHINE=$1
+	IP_MACHINE=$2
 	# Attend que la machine soit éteinte.
-	TIME_OUT=$(($TIME_TO_SWITCH * 60 + 300))	# Timeout à $TIME_TO_SWITCH +5 minutes, en seconde
+	# Timeout à $TIME_TO_SWITCH +5 minutes, en seconde
+	TIME_OUT=$(($TIME_TO_SWITCH * 60 + 300))
 	sudo lxc-wait -n $MACHINE -s 'STOPPED' -t $TIME_OUT
 
+	while sudo test -e /var/lib/lxc/$MACHINE/lock_file; do
+		sleep 1	# Attend que le conteneur soit libéré par le script switch.
+	done
+
 	# Restaure le snapshot
-	sudo lxc-snapshot -r snap0 $MACHINE
+	sudo lxc-snapshot -r snap0 -n $MACHINE
+
+	# Change l'ip du conteneur le temps de l'upgrade. Pour empêcher HAProxy de basculer sur le conteneur.
+	sudo sed -i "s@address $IP_MACHINE@address $IP_UPGRADE@" /var/lib/lxc/$MACHINE/rootfs/etc/network/interfaces
 
 	# Démarre le conteneur
 	sudo lxc-start -n $MACHINE -d > /dev/null
 	sleep 10
 
 	# Update
+	update_apt=0
 	sudo lxc-attach -n $MACHINE -- apt-get update
 	sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade --dry-run | grep -q "^Inst "	# Vérifie si il y aura des mises à jour.
-	update_apt=0
 	if [ "$?" -eq 0 ]; then
 		update_apt=1
 	fi
@@ -40,7 +53,10 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	# Arrêt de la machine virtualisée
 	sudo lxc-stop -n $MACHINE
 
-	if [ "$update_apt" -eq 1 ]
+	# Restaure l'ip d'origine du conteneur.
+	sudo sed -i "s@address $IP_UPGRADE@address $IP_MACHINE@" /var/lib/lxc/$MACHINE/rootfs/etc/network/interfaces
+
+	if [ "$update_apt" -eq "1" ]
 	then
 		# Archivage du snapshot
 		sudo tar -cz --acls --xattrs -f /var/lib/lxcsnaps/$MACHINE/snap0.tar.gz /var/lib/lxcsnaps/$MACHINE/snap0
@@ -50,21 +66,5 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	fi
 }
 
-# Initialisation du réseau pour le conteneur.
-if ! sudo ifquery lxc_demo --state > /dev/null; then
-	sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo
-fi
-
-# Activation des règles iptables
-if ! sudo iptables -D FORWARD -i lxc_demo -o eth0 -j ACCEPT 2> /dev/null; then
-	sudo iptables -A FORWARD -i lxc_demo -o eth0 -j ACCEPT
-fi
-if ! sudo iptables -C FORWARD -i eth0 -o lxc_demo -j ACCEPT 2> /dev/null; then
-	sudo iptables -A FORWARD -i eth0 -o lxc_demo -j ACCEPT
-fi
-if ! sudo iptables -t nat -C POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE 2> /dev/null; then
-	sudo iptables -t nat -A POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE
-fi
-
-UPGRADE_DEMO_CONTAINER $LXC_NAME1
-UPGRADE_DEMO_CONTAINER $LXC_NAME2
+UPGRADE_DEMO_CONTAINER $LXC_NAME1 $IP_LXC1
+UPGRADE_DEMO_CONTAINER $LXC_NAME2 $IP_LXC2

@@ -21,7 +21,7 @@ if [ $(sudo lxc-info --name $LXC_NAME2 | grep -c "STOPPED") -eq 0 ]; then
 fi
 
 echo "> Suppression des règles de parefeu"
-if sudo iptables -D FORWARD -i lxc_demo -o eth0 -j ACCEPT 2> /dev/null; then
+if sudo iptables -C FORWARD -i lxc_demo -o eth0 -j ACCEPT 2> /dev/null; then
 	sudo iptables -D FORWARD -i lxc_demo -o eth0 -j ACCEPT
 fi
 if sudo iptables -C FORWARD -i eth0 -o lxc_demo -j ACCEPT 2> /dev/null; then

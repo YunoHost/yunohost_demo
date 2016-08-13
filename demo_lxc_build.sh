@@ -16,7 +16,8 @@ DOMAIN=demotest1.tld
 YUNO_PWD=admin
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
-TIME_TO_SWITCH=30	# En minutes
+TIME_TO_SWITCH=30
+ # En minutes
 
 USER_DEMO=demo
 PASSWORD_DEMO=demo
@@ -105,7 +106,7 @@ sudo sudo lxc-clone -o $LXC_NAME1 -n $LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
 echo "> Modification de l'ip du clone" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s@address $IP_LXC1@address $IP_LXC2@" /var/lib/lxc/$LXC_NAME2/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1
 echo "> Et le nom du veth" | tee -a "$LOG_BUILD_LXC"
-sudo sed -i "s@^lxc.network.veth.pair = $LXC_NAME1$@lxc.network.veth.pair = $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/config >> "$LOG_BUILD_LXC" 2>&1
+sudo sed -i "s@^lxc.network.veth.pair = $LXC_NAME1@lxc.network.veth.pair = $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/config >> "$LOG_BUILD_LXC" 2>&1
 
 # Mise en place du cron de switch
 echo | sudo tee /etc/cron.d/demo_switch <<EOF
@@ -114,15 +115,14 @@ echo | sudo tee /etc/cron.d/demo_switch <<EOF
 EOF
 # Et du cron d'upgrade
 echo | sudo tee /etc/cron.d/demo_upgrade <<EOF
-# Vérifie les mises à jour des conteneurs de demo, lorsqu'ils ne sont pas utilisés, à partir de 3h chaque nuit.
-0 3 * * * root $script_dir/demo_switch.sh >> "$script_dir/demo_upgrade.log" 2>&1
+# Vérifie les mises à jour des conteneurs de demo, lorsqu'ils ne sont pas utilisés, à partir de 3h2minutes chaque nuit. Attention à rester sur un multiple du temps de switch.
+2 3 * * * root $script_dir/demo_switch.sh >> "$script_dir/demo_upgrade.log" 2>&1
 EOF
 
 # Démarrage de la démo
 "$script_dir/demo_start.sh"
 
 # Après le démarrage du premier conteneur, fait un snapshot du deuxième.
-
 echo "> Création d'un snapshot pour le 2e conteneur" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-snapshot -n $LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
 # Il sera nommé snap0 et stocké dans /var/lib/lxcsnaps/$LXC_NAME2/snap0/
