@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Stoppe les conteneurs de demo et arrête la config réseau dédiée.
+# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi

@@ -1,15 +1,18 @@
 #!/bin/bash
 
 # Installe LXC et les paramètres réseaux avant de procéder au build.
+# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-LOG_BUILD_LXC="$(cat "$script_dir/demo_lxc_build.sh" | grep LOG_BUILD_LXC= | cut -d '=' -f2)"
+LOG=$(cat "$script_dir/demo_lxc_build.sh" | grep LOG= | cut -d '=' -f2)
+LOG_BUILD_LXC="$script_dir/$LOG"
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
 LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
 PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
-IP_LXC=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC= | cut -d '=' -f2)
+IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
+IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
 DOMAIN=$(cat "$script_dir/demo_lxc_build.sh" | grep DOMAIN= | cut -d '=' -f2)
 
 # Créer le dossier de log
@@ -39,17 +42,22 @@ sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUIL
 echo "> Mise en place de la connexion ssh vers l'invité." | tee -a "$LOG_BUILD_LXC"
 if [ -e $HOME/.ssh/$LXC_NAME1 ]; then
 	rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
-	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC
+	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC1
+	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC2
 fi
 ssh-keygen -t dsa -f $HOME/.ssh/$LXC_NAME1 -P '' >> "$LOG_BUILD_LXC" 2>&1
 
 echo | tee -a $HOME/.ssh/config <<EOF >> "$LOG_BUILD_LXC" 2>&1
 # ssh $LXC_NAME1
 Host $LXC_NAME1
-Host $LXC_NAME2
-Hostname $IP_LXC
+Hostname $IP_LXC1
 User ssh_demo
 IdentityFile $HOME/.ssh/$LXC_NAME1
+Host $LXC_NAME2
+Hostname $IP_LXC2
+User ssh_demo
+IdentityFile $HOME/.ssh/$LXC_NAME1
+# End ssh $LXC_NAME1
 EOF
 
 echo "> Mise en place du reverse proxy" | tee -a "$LOG_BUILD_LXC"
@@ -73,7 +81,7 @@ server {
 	server_name $DOMAIN;
 
 	location / {
-		proxy_pass        https://$IP_LXC;
+		proxy_pass        https://$IP_LXC1;
 		proxy_redirect    off;
 		proxy_set_header  Host \$host;
 		proxy_set_header  X-Real-IP \$remote_addr;
@@ -100,5 +108,7 @@ sudo service nginx reload
 # Add
 #         maxconn 500 
 
+echo "\nLe serveur est prêt à déployer les conteneurs de demo."
+echo "Exécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo."
 # Déploie les conteneurs de demo
-"$script_dir/demo_lxc_build.sh"
+# "$script_dir/demo_lxc_build.sh"

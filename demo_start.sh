@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Démarre le premier conteneur de demo et active la config réseau dédiée.
+# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
@@ -8,7 +9,7 @@ if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$P
 PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
 LXC_NAME=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
 
-"$script_dir/demo_stop.sh"
+"$script_dir/demo_stop.sh" > /dev/null 2>&1
 
 echo "Initialisation du réseau pour le conteneur."
 if ! sudo ifquery lxc_demo --state > /dev/null; then

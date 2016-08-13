@@ -21,7 +21,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	sudo lxc-snapshot -r snap0 $MACHINE
 
 	# Démarre le conteneur
-	sudo lxc-start -n $MACHINE -d
+	sudo lxc-start -n $MACHINE -d > /dev/null
 	sleep 10
 
 	# Update

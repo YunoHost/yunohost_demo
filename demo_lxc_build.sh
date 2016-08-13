@@ -1,14 +1,17 @@
 #!/bin/bash
 
 # Créer les conteneurs Yunohost et les configure
+# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-LOG_BUILD_LXC="/var/log/lxc_demo/Build_lxc.log"
-PLAGE_IP="10.1.5"
-IP_LXC="10.1.5.3"
-ARG_SSH="-t"
+LOG=Build_lxc.log
+LOG_BUILD_LXC="$script_dir/$LOG"
+PLAGE_IP=10.1.5
+IP_LXC1=10.1.5.3
+IP_LXC2=10.1.5.4
+ARG_SSH=-t
 DOMAIN=demotest1.tld
 YUNO_PWD=admin
 LXC_NAME1=yunohost_demo1
@@ -28,7 +31,7 @@ echo "> Configuration réseau du conteneur" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s/^lxc.network.type = empty$/lxc.network.type = veth\nlxc.network.flags = up\nlxc.network.link = lxc_demo\nlxc.network.name = eth0\nlxc.network.veth.pair = $LXC_NAME1\nlxc.network.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
 
 echo "> Configuration réseau de la machine virtualisée" | tee -a "$LOG_BUILD_LXC"
-sudo sed -i "s@iface eth0 inet dhcp@iface eth0 inet static\n\taddress $IP_LXC/24\n\tgateway $PLAGE_IP.1@" /var/lib/lxc/$LXC_NAME1/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1
+sudo sed -i "s@iface eth0 inet dhcp@iface eth0 inet static\n\taddress $IP_LXC1/24\n\tgateway $PLAGE_IP.1@" /var/lib/lxc/$LXC_NAME1/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1
 
 echo "> Configure le parefeu" | tee -a "$LOG_BUILD_LXC"
 sudo iptables -A FORWARD -i lxc_demo -o eth0 -j ACCEPT >> "$LOG_BUILD_LXC" 2>&1
@@ -99,16 +102,27 @@ sudo lxc-snapshot -n $LXC_NAME1 >> "$LOG_BUILD_LXC" 2>&1
 echo "> Clone la machine" | tee -a "$LOG_BUILD_LXC"
 sudo sudo lxc-clone -o $LXC_NAME1 -n $LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
 
+echo "> Modification de l'ip du clone" | tee -a "$LOG_BUILD_LXC"
+sudo sed -i "s@address $IP_LXC1@address $IP_LXC2@" /var/lib/lxc/$LXC_NAME2/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1
+echo "> Et le nom du veth" | tee -a "$LOG_BUILD_LXC"
+sudo sed -i "s@^lxc.network.veth.pair = $LXC_NAME1$@lxc.network.veth.pair = $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/config >> "$LOG_BUILD_LXC" 2>&1
+
 # Mise en place du cron de switch
 echo | sudo tee /etc/cron.d/demo_switch <<EOF
 # Switch des conteneurs toutes les $TIME_TO_SWITCH minutes
-*/$TIME_TO_SWITCH * * * * root $script_dir/demo_switch.sh > /dev/null 2>&1
+*/$TIME_TO_SWITCH * * * * root $script_dir/demo_switch.sh >> "$script_dir/demo_switch.log" 2>&1
 EOF
 # Et du cron d'upgrade
 echo | sudo tee /etc/cron.d/demo_upgrade <<EOF
 # Vérifie les mises à jour des conteneurs de demo, lorsqu'ils ne sont pas utilisés, à partir de 3h chaque nuit.
-0 3 * * * root $script_dir/demo_switch.sh > /dev/null 2>&1
+0 3 * * * root $script_dir/demo_switch.sh >> "$script_dir/demo_upgrade.log" 2>&1
 EOF
 
 # Démarrage de la démo
 "$script_dir/demo_start.sh"
+
+# Après le démarrage du premier conteneur, fait un snapshot du deuxième.
+
+echo "> Création d'un snapshot pour le 2e conteneur" | tee -a "$LOG_BUILD_LXC"
+sudo lxc-snapshot -n $LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
+# Il sera nommé snap0 et stocké dans /var/lib/lxcsnaps/$LXC_NAME2/snap0/
