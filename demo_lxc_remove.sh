@@ -20,8 +20,8 @@ echo "> Supprime le brige réseau"
 sudo rm /etc/network/interfaces.d/lxc_demo
 
 # LXC était déjà installé sur le serveur de demo actuel. On ne l'enlève pas.
-# echo "> Remove lxc lxctl"
-# sudo apt-get remove lxc lxctl
+echo "> Remove lxc lxctl"
+sudo apt-get remove lxc lxctl
 
 echo "> Suppression de la clé SSH"
 rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
@@ -29,10 +29,9 @@ echo "> Et de sa config spécifique dans $HOME/.ssh/config"
 BEGIN_LINE=$(cat $HOME/.ssh/config | grep -n "^# ssh $LXC_NAME1" | cut -d':' -f 1)
 sed -i "$BEGIN_LINE,/^# End ssh $LXC_NAME1/d" $HOME/.ssh/config
 
-## Pas de reverse proxy nécessaire sur le serveur de démo actuel.
 # Suppression du reverse proxy
-# sudo rm /etc/nginx/conf.d/$DOMAIN.conf
-# sudo service nginx reload
+sudo rm /etc/nginx/conf.d/$DOMAIN.conf
+sudo service nginx reload
 
 # Suppression de la config haproxy
 # La config haproxy est modifiée manuellement.

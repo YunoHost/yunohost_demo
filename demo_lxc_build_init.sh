@@ -60,43 +60,42 @@ IdentityFile $HOME/.ssh/$LXC_NAME1
 # End ssh $LXC_NAME1
 EOF
 
-## Pas de reverse proxy nécessaire sur le serveur de démo actuel.
-# echo "> Mise en place du reverse proxy" | tee -a "$LOG_BUILD_LXC"
-# echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF
-# server {
-# 	listen 80;
-# 	listen [::]:80;
-# 	server_name $DOMAIN;
-#
-# 	if (\$scheme = http) {
-# 		rewrite ^ https://\$server_name\$request_uri? permanent;
-# 	}
-#
-# 	access_log /var/log/nginx/$DOMAIN-access.log;
-# 	error_log /var/log/nginx/$DOMAIN-error.log;
-# }
-#
-# server {
-# 	listen 443 ssl;
-# 	listen [::]:443 ssl;
-# 	server_name $DOMAIN;
-#
-# 	location / {
-# 		proxy_pass        https://$IP_LXC1;
-# 		proxy_redirect    off;
-# 		proxy_set_header  Host \$host;
-# 		proxy_set_header  X-Real-IP \$remote_addr;
-# 		proxy_set_header  X-Forwarded-Proto \$scheme;
-# 		proxy_set_header  X-Forwarded-For \$proxy_add_x_forwarded_for;
-# 		proxy_set_header  X-Forwarded-Host \$server_name;
-# 	}
-#
-# 	access_log /var/log/nginx/$DOMAIN-access.log;
-# 	error_log /var/log/nginx/$DOMAIN-error.log;
-# }
-# EOF
-#
-# sudo service nginx reload
+echo "> Mise en place du reverse proxy" | tee -a "$LOG_BUILD_LXC"
+echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF
+server {
+	listen 80;
+	listen [::]:80;
+	server_name $DOMAIN;
+
+	if (\$scheme = http) {
+		rewrite ^ https://\$server_name\$request_uri? permanent;
+	}
+
+	access_log /var/log/nginx/$DOMAIN-access.log;
+	error_log /var/log/nginx/$DOMAIN-error.log;
+}
+
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+	server_name $DOMAIN;
+
+	location / {
+		proxy_pass        https://$IP_LXC1;
+		proxy_redirect    off;
+		proxy_set_header  Host \$host;
+		proxy_set_header  X-Real-IP \$remote_addr;
+		proxy_set_header  X-Forwarded-Proto \$scheme;
+		proxy_set_header  X-Forwarded-For \$proxy_add_x_forwarded_for;
+		proxy_set_header  X-Forwarded-Host \$server_name;
+	}
+
+	access_log /var/log/nginx/$DOMAIN-access.log;
+	error_log /var/log/nginx/$DOMAIN-error.log;
+}
+EOF
+
+sudo service nginx reload
 
 # Mise en place de HAProxy
 # [...]
