@@ -30,8 +30,8 @@ then
 	# [...]
 	exit 1
 else
-	# Bascule sur le conteneur B avec HAProxy...
-	# Automatique par HAProxy lorsque la machine A sera éteinte.
+	# Bascule sur le conteneur B avec le load balancing de nginx...
+	# Automatique par nginx lorsque la machine A sera éteinte.
 	# Arrêt du conteneur A. Il est remplacé par le B
 	sudo touch /var/lib/lxc/$LXC_A/lock_file	# Met en place un fichier pour indiquer que la machine n'est pas encore dispo.
 	sudo lxc-stop -n $LXC_A

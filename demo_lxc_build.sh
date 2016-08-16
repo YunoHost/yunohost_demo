@@ -12,8 +12,8 @@ PLAGE_IP=10.1.5
 IP_LXC1=10.1.5.3
 IP_LXC2=10.1.5.4
 ARG_SSH=-t
-DOMAIN=demotest1.tld
-YUNO_PWD=admin
+DOMAIN=$(cat "$script_dir/domain.ini")
+YUNO_PWD=demo
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
@@ -21,6 +21,15 @@ TIME_TO_SWITCH=30
 
 USER_DEMO=demo
 PASSWORD_DEMO=demo
+
+# Check root
+CHECK_ROOT=$EUID
+if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
+if [ $CHECK_ROOT -eq 0 ]
+then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
+   echo "Le script ne doit pas être exécuté avec les droits root"
+   exit 1
+fi
 
 echo "> Création d'une machine debian jessie minimaliste" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-create -n $LXC_NAME1 -t debian -- -r jessie >> "$LOG_BUILD_LXC" 2>&1
@@ -83,6 +92,9 @@ USER_DEMO_CLEAN=${USER_DEMO//"_"/""}
 echo "> Ajout de l'utilisateur de demo" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create --firstname \"$USER_DEMO_CLEAN\" --mail \"$USER_DEMO_CLEAN@$DOMAIN\" --lastname \"$USER_DEMO_CLEAN\" --password \"$PASSWORD_DEMO\" \"$USER_DEMO\" --admin-password=\"$YUNO_PWD\""
 
+# echo "> Ajout du certificat SSL via Let's encrypt" | tee -a "$LOG_BUILD_LXC"
+# ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install https://github.com/YunoHost-Apps/letsencrypt_ynh -a \"domain=$DOMAIN&admin=$USER_DEMO&installForAllDomains=Yes\""
+
 echo -e "\n> Vérification de l'état de Yunohost" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost -v" | tee -a "$LOG_BUILD_LXC" 2>&1
 
@@ -107,19 +119,21 @@ echo "> Modification de l'ip du clone" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s@address $IP_LXC1@address $IP_LXC2@" /var/lib/lxc/$LXC_NAME2/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1
 echo "> Et le nom du veth" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s@^lxc.network.veth.pair = $LXC_NAME1@lxc.network.veth.pair = $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/config >> "$LOG_BUILD_LXC" 2>&1
+echo "> Et enfin renseigne /etc/hosts sur le clone" | tee -a "$LOG_BUILD_LXC"
+sudo sed -i "s@^127.0.0.1 $LXC_NAME1@127.0.0.1 $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/rootfs/etc/hosts >> "$LOG_BUILD_LXC" 2>&1
 
-# Mise en place du cron de switch
-echo | sudo tee /etc/cron.d/demo_switch <<EOF
+echo "> Mise en place du cron de switch"
+echo | sudo tee /etc/cron.d/demo_switch <<EOF > /dev/null
 # Switch des conteneurs toutes les $TIME_TO_SWITCH minutes
 */$TIME_TO_SWITCH * * * * root $script_dir/demo_switch.sh >> "$script_dir/demo_switch.log" 2>&1
 EOF
-# Et du cron d'upgrade
-echo | sudo tee /etc/cron.d/demo_upgrade <<EOF
+echo "> Et du cron d'upgrade"
+echo | sudo tee /etc/cron.d/demo_upgrade <<EOF > /dev/null
 # Vérifie les mises à jour des conteneurs de demo, lorsqu'ils ne sont pas utilisés, à partir de 3h2minutes chaque nuit. Attention à rester sur un multiple du temps de switch.
 2 3 * * * root $script_dir/demo_switch.sh >> "$script_dir/demo_upgrade.log" 2>&1
 EOF
 
-# Démarrage de la démo
+echo "> Démarrage de la démo"
 "$script_dir/demo_start.sh"
 
 # Après le démarrage du premier conteneur, fait un snapshot du deuxième.

@@ -8,7 +8,16 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
-DOMAIN=$(cat "$script_dir/demo_lxc_build.sh" | grep DOMAIN= | cut -d '=' -f2)
+DOMAIN=$(cat "$script_dir/domain.ini")
+
+# Check root
+CHECK_ROOT=$EUID
+if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
+if [ $CHECK_ROOT -eq 0 ]
+then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
+   echo "Le script ne doit pas être exécuté avec les droits root"
+   exit 1
+fi
 
 "$script_dir/demo_lxc_destroy.sh"
 
@@ -32,7 +41,3 @@ sed -i "$BEGIN_LINE,/^# End ssh $LXC_NAME1/d" $HOME/.ssh/config
 # Suppression du reverse proxy
 sudo rm /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
-
-# Suppression de la config haproxy
-# La config haproxy est modifiée manuellement.
-# On peut commenter les lignes des serveurs LXC. Et éventuellement relancer les conteneurs dockers.

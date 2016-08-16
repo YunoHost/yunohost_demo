@@ -13,7 +13,18 @@ LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -
 PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
 IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
 IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
-DOMAIN=$(cat "$script_dir/demo_lxc_build.sh" | grep DOMAIN= | cut -d '=' -f2)
+
+# Check root
+CHECK_ROOT=$EUID
+if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
+if [ $CHECK_ROOT -eq 0 ]
+then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
+   echo "Le script ne doit pas être exécuté avec les droits root"
+   exit 1
+fi
+
+read -p "Indiquer le nom de domaine du serveur de demo: " DOMAIN
+echo "$DOMAIN" > "$script_dir/domain.ini"
 
 # Créer le dossier de log
 sudo mkdir -p $(dirname $LOG_BUILD_LXC)
@@ -60,8 +71,13 @@ IdentityFile $HOME/.ssh/$LXC_NAME1
 # End ssh $LXC_NAME1
 EOF
 
-echo "> Mise en place du reverse proxy" | tee -a "$LOG_BUILD_LXC"
-echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF
+echo "> Mise en place du reverse proxy et du load balancing" | tee -a "$LOG_BUILD_LXC"
+echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF >> "$LOG_BUILD_LXC" 2>&1
+upstream $DOMAIN  {
+  server $IP_LXC1:443 ;
+  server $IP_LXC2:443 ;
+}
+
 server {
 	listen 80;
 	listen [::]:80;
@@ -81,7 +97,7 @@ server {
 	server_name $DOMAIN;
 
 	location / {
-		proxy_pass        https://$IP_LXC1;
+		proxy_pass        https://$DOMAIN;
 		proxy_redirect    off;
 		proxy_set_header  Host \$host;
 		proxy_set_header  X-Real-IP \$remote_addr;
@@ -96,16 +112,6 @@ server {
 EOF
 
 sudo service nginx reload
-
-# Mise en place de HAProxy
-# [...]
-# 	server yunohost_demo1 10.1.5.3:80 check
-# 	server yunohost_demo2 10.1.5.4:80 check
-#
-# 	server yunohost_demo1 10.1.5.3:443 check
-# 	server yunohost_demo2 10.1.5.4:443 check
-# On garde la config actuelle
-# Et manuellement, on commente les lignes des conteneurs dockers et on ajoutes les lignes des ip ci-dessus pour mettre à la place les conteneurs LXC.
 
 echo "\nLe serveur est prêt à déployer les conteneurs de demo."
 echo "Exécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo."
