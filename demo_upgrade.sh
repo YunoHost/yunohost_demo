@@ -63,10 +63,6 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 				echo "Échec du script $LIGNE"
 				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/$LIGNE.fail"
 				update_apt=0
-			elif [ "$LOOP" -eq 2 ]
-			then	# Après l'upgrade du 2e conteneur, déplace le script dans le dossier des anciens scripts si il a été exécuté avec succès.
-				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/old_scripts/$LIGNE"
-			fi
 		fi
 	done
 
@@ -83,6 +79,17 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 		# Remplacement du snapshot
 		sudo lxc-snapshot -n $MACHINE -d snap0
 		sudo lxc-snapshot -n $MACHINE
+
+		if [ "$LOOP" -eq 2 ]
+		then	# Après l'upgrade du 2e conteneur, déplace les scripts dans le dossier des anciens scripts si ils ont été exécutés avec succès.
+			ls -1 "$script_dir/upgrade.d" | while read LIGNE
+			do
+				if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
+				then
+					mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/old_scripts/$LIGNE"
+				fi
+			done
+		fi
 	fi
 }
 

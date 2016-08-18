@@ -5,6 +5,8 @@
 # L'ensemble des scripts ajoutés ici seront exécutés lors de l'upgrade des conteneurs dans la nuit
 # Toutefois, l'exécution sera loggée dans $script_dir/demo_upgrade.log
 
+# Et soyez malin, ajouter également les modifications dans le script demo_lxc_build.sh, pour éviter de devoir refaire l'upgrade à chaque fois.
+
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
