@@ -14,6 +14,7 @@ PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2
 TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '=' -f2)
 
 IP_UPGRADE=$PLAGE_IP.150
+LOOP=0
 
 UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	MACHINE=$1
@@ -49,6 +50,25 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	# Clean
 	sudo lxc-attach -n $MACHINE -- apt-get autoremove
 	sudo lxc-attach -n $MACHINE -- apt-get autoclean
+
+	# Exécution des scripts de upgrade.d
+	LOOP=$((LOOP + 1))
+	ls -1 "$script_dir/upgrade.d" | while read LIGNE
+	do
+		if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
+		then
+			# Exécute chaque script trouvé dans upgrade.d
+			/bin/bash "$script_dir/upgrade.d/$LIGNE" $MACHINE
+			if [ "$?" -ne 0 ]; then	# Si le script a échoué, le snapshot est annulé.
+				echo "Échec du script $LIGNE"
+				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/$LIGNE.fail"
+				update_apt=0
+			elif [ "$LOOP" -eq 2 ]
+			then	# Après l'upgrade du 2e conteneur, déplace le script dans le dossier des anciens scripts si il a été exécuté avec succès.
+				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/old_scripts/$LIGNE"
+			fi
+		fi
+	done
 
 	# Arrêt de la machine virtualisée
 	sudo lxc-stop -n $MACHINE

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Ce script est un script d'exemple à dupliquer pour effectuer des modifications pérennes dans les conteneurs de demo.
+# Le script n'est pas exécuté dans le conteneur, il convient donc d'utiliser lxc-attach pour opérer à l'intérieur.
+# L'ensemble des scripts ajoutés ici seront exécutés lors de l'upgrade des conteneurs dans la nuit
+# Toutefois, l'exécution sera loggée dans $script_dir/demo_upgrade.log
+
+# Récupère le dossier du script
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+
+MACHINE=$1	# Nom du conteneur
+
+sudo lxc-attach -n $MACHINE -- echo coucou
