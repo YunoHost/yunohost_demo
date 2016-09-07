@@ -11,13 +11,13 @@ LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -
 DOMAIN=$(cat "$script_dir/domain.ini")
 
 # Check root
-CHECK_ROOT=$EUID
-if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-if [ $CHECK_ROOT -eq 0 ]
-then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-   echo "Le script ne doit pas être exécuté avec les droits root"
-   exit 1
-fi
+# CHECK_ROOT=$EUID
+# if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
+# if [ $CHECK_ROOT -eq 0 ]
+# then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
+#    echo "Le script ne doit pas être exécuté avec les droits root"
+#    exit 1
+# fi
 
 "$script_dir/demo_lxc_destroy.sh"
 

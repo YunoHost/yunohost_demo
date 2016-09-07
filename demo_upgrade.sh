@@ -12,6 +12,7 @@ IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
 IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
 PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
 TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '=' -f2)
+MAIL_ADDR=$(cat "$script_dir/demo_lxc_build.sh" | grep MAIL_ADDR= | cut -d '=' -f2)
 
 IP_UPGRADE=$PLAGE_IP.150
 LOOP=0
@@ -62,6 +63,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 			if [ "$?" -ne 0 ]; then	# Si le script a échoué, le snapshot est annulé.
 				echo "Échec du script $LIGNE"
 				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/$LIGNE.fail"
+				mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré."
 				update_apt=0
 		fi
 	done

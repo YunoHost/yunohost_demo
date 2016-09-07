@@ -9,6 +9,7 @@ if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$P
 PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
 LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
+MAIL_ADDR=$(cat "$script_dir/demo_lxc_build.sh" | grep MAIL_ADDR= | cut -d '=' -f2)
 
 # Vérifie l'état des machines.
 if [ "$(sudo lxc-info --name $LXC_NAME1 | grep -c "RUNNING")" -eq "1" ]
@@ -26,8 +27,8 @@ sudo lxc-start -n $LXC_B -o "$script_dir/demo_switch.log" -d > /dev/null	# Déma
 sleep 10	# Attend 10 seconde pour s'assurer du démarrage de la machine.
 if [ "$(sudo lxc-info --name $LXC_B | grep -c "STOPPED")" -eq "1" ]
 then
-	# Le conteneur n'a pas réussi à démarrer. On devrait avertir un responsable par mail...
-	# [...]
+	# Le conteneur n'a pas réussi à démarrer. On averti un responsable par mail...
+	mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR "Échec du démarrage du conteneur $LXC_B sur le serveur de demo!"
 	exit 1
 else
 	# Bascule sur le conteneur B avec le load balancing de nginx...

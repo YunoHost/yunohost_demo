@@ -18,18 +18,19 @@ LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
  # En minutes
+MAIL_ADDR=demo@yunohost.org
 
 USER_DEMO=demo
 PASSWORD_DEMO=demo
 
 # Check root
-CHECK_ROOT=$EUID
-if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-if [ $CHECK_ROOT -eq 0 ]
-then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-   echo "Le script ne doit pas être exécuté avec les droits root"
-   exit 1
-fi
+# CHECK_ROOT=$EUID
+# if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
+# if [ $CHECK_ROOT -eq 0 ]
+# then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
+#    echo "Le script ne doit pas être exécuté avec les droits root"
+#    exit 1
+# fi
 
 echo "> Création d'une machine debian jessie minimaliste" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-create -n $LXC_NAME1 -t debian -- -r jessie >> "$LOG_BUILD_LXC" 2>&1

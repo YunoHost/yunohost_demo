@@ -13,13 +13,13 @@ IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
 IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
 
 # Check root
-CHECK_ROOT=$EUID
-if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-if [ $CHECK_ROOT -eq 0 ]
-then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-   echo "Le script ne doit pas être exécuté avec les droits root"
-   exit 1
-fi
+# CHECK_ROOT=$EUID
+# if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
+# if [ $CHECK_ROOT -eq 0 ]
+# then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
+#    echo "Le script ne doit pas être exécuté avec les droits root"
+#    exit 1
+# fi
 
 "$script_dir/demo_stop.sh"
 
