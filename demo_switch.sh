@@ -22,13 +22,17 @@ else	# Sinon, on suppose que c'est la machine 2 qui est en cours.
 	# Si aucune machine ne tourne, la première démarrera.
 fi
 
+while sudo test -e /var/lib/lxc/$LXC_B/lock_file; do
+	sleep 5	# Attend que le conteneur soit libéré par le script upgrade, le cas échéant.
+done
+
 # Démarre le conteneur B et arrête le conteneur A.
 sudo lxc-start -n $LXC_B -o "$script_dir/demo_switch.log" -d > /dev/null	# Démarre l'autre machine
 sleep 10	# Attend 10 seconde pour s'assurer du démarrage de la machine.
 if [ "$(sudo lxc-info --name $LXC_B | grep -c "STOPPED")" -eq "1" ]
 then
 	# Le conteneur n'a pas réussi à démarrer. On averti un responsable par mail...
-	mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR "Échec du démarrage du conteneur $LXC_B sur le serveur de demo!"
+	mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR <<< "Échec du démarrage du conteneur $LXC_B sur le serveur de demo!"
 	exit 1
 else
 	# Bascule sur le conteneur B avec le load balancing de nginx...

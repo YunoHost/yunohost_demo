@@ -28,7 +28,6 @@ sudo sysctl -p
 echo "> Supprime le brige réseau"
 sudo rm /etc/network/interfaces.d/lxc_demo
 
-# LXC était déjà installé sur le serveur de demo actuel. On ne l'enlève pas.
 echo "> Remove lxc lxctl"
 sudo apt-get remove lxc lxctl
 
@@ -39,5 +38,15 @@ BEGIN_LINE=$(cat $HOME/.ssh/config | grep -n "^# ssh $LXC_NAME1" | cut -d':' -f 
 sed -i "$BEGIN_LINE,/^# End ssh $LXC_NAME1/d" $HOME/.ssh/config
 
 # Suppression du reverse proxy
+echo "> Suppression de la config nginx"
 sudo rm /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
+
+# Suppression du certificat Let's encrypt
+echo "> Suppression de Let's encrypt"
+sudo rm -r /etc/letsencrypt
+sudo rm -r ~/.local/share/letsencrypt
+sudo rm -r ~/letsencrypt
+sudo rm -r /var/lib/letsencrypt
+# Supprime la tache cron
+sudo rm /etc/cron.weekly/certificateRenewer

@@ -93,9 +93,6 @@ USER_DEMO_CLEAN=${USER_DEMO//"_"/""}
 echo "> Ajout de l'utilisateur de demo" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create --firstname \"$USER_DEMO_CLEAN\" --mail \"$USER_DEMO_CLEAN@$DOMAIN\" --lastname \"$USER_DEMO_CLEAN\" --password \"$PASSWORD_DEMO\" \"$USER_DEMO\" --admin-password=\"$YUNO_PWD\""
 
-# echo "> Ajout du certificat SSL via Let's encrypt" | tee -a "$LOG_BUILD_LXC"
-# ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install https://github.com/YunoHost-Apps/letsencrypt_ynh -a \"domain=$DOMAIN&admin=$USER_DEMO&installForAllDomains=Yes\""
-
 echo -e "\n> Vérification de l'état de Yunohost" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost -v" | tee -a "$LOG_BUILD_LXC" 2>&1
 

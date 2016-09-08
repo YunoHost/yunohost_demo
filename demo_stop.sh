@@ -36,4 +36,8 @@ if sudo ifquery lxc_demo --state > /dev/null; then
 	sudo ifdown --force lxc_demo
 fi
 
+echo "Suppression des lock."
+sudo rm /var/lib/lxc/$LXC_NAME1/lock_file
+sudo rm /var/lib/lxc/$LXC_NAME2/lock_file
+
 sudo lxc-ls -f

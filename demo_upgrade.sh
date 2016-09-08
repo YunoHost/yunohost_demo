@@ -26,8 +26,10 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	sudo lxc-wait -n $MACHINE -s 'STOPPED' -t $TIME_OUT
 
 	while sudo test -e /var/lib/lxc/$MACHINE/lock_file; do
-		sleep 1	# Attend que le conteneur soit libéré par le script switch.
+		sleep 5	# Attend que le conteneur soit libéré par le script switch.
 	done
+
+	sudo touch /var/lib/lxc/$MACHINE/lock_file	# Met en place un fichier pour indiquer que la machine est indisponible pendant l'upgrade
 
 	# Restaure le snapshot
 	sudo lxc-snapshot -r snap0 -n $MACHINE
@@ -63,7 +65,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 			if [ "$?" -ne 0 ]; then	# Si le script a échoué, le snapshot est annulé.
 				echo "Échec du script $LIGNE"
 				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/$LIGNE.fail"
-				mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré."
+				mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR <<< "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré."
 				update_apt=0
 		fi
 	done
@@ -93,6 +95,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 			done
 		fi
 	fi
+	sudo rm /var/lib/lxc/$MACHINE/lock_file	# Libère le lock, la machine est à nouveau disponible
 }
 
 UPGRADE_DEMO_CONTAINER $LXC_NAME1 $IP_LXC1
