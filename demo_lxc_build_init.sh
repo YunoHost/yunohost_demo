@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # Installe LXC et les paramètres réseaux avant de procéder au build.
-# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
-if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 LOG=$(cat "$script_dir/demo_lxc_build.sh" | grep LOG= | cut -d '=' -f2)
 LOG_BUILD_LXC="$script_dir/$LOG"
@@ -15,14 +14,8 @@ IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
 IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
 MAIL_ADDR=$(cat "$script_dir/demo_lxc_build.sh" | grep MAIL_ADDR= | cut -d '=' -f2)
 
-# Check root
-# CHECK_ROOT=$EUID
-# if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-# if [ $CHECK_ROOT -eq 0 ]
-# then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-#    echo "Le script ne doit pas être exécuté avec les droits root"
-#    exit 1
-# fi
+# Check user
+echo $USER > "$script_dir/setup_user"
 
 read -p "Indiquer le nom de domaine du serveur de demo: " DOMAIN
 echo "$DOMAIN" > "$script_dir/domain.ini"
@@ -76,6 +69,7 @@ echo "> Mise en place du reverse proxy et du load balancing" | tee -a "$LOG_BUIL
 echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF >> "$LOG_BUILD_LXC" 2>&1
 upstream $DOMAIN  {
   server $IP_LXC1:80 ;
+  server $IP_LXC1:443 ;
   server $IP_LXC2:443 ;
 }
 
@@ -134,7 +128,7 @@ cd ~
 git clone https://github.com/letsencrypt/letsencrypt
 cd letsencrypt/
 # Installe les dépendances de let's encrypt
-./letsencrypt-auto --help
+sudo ./letsencrypt-auto --help
 sudo mkdir /etc/letsencrypt
 
 # Créer le fichier de config
@@ -166,10 +160,14 @@ EOF
 
 mkdir -p /tmp/letsencrypt-auto
 # Créer le certificat
-./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN
+sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN
 
 # Route l'upstream sur le port 443. Le port 80 servait uniquement à let's encrypt
 sudo sed -i "s/server $IP_LXC1:80 ;/server $IP_LXC1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
+# Décommente les lignes du certificat
+sudo sed -i "s/#\tssl_certificate/\tssl_certificate/g" /etc/nginx/conf.d/$DOMAIN.conf
+sudo service nginx reload
+
 
 # Mise en place du cron de renouvellement.
 wget https://raw.githubusercontent.com/YunoHost-Apps/letsencrypt_ynh/master/sources/certificateRenewer
@@ -177,7 +175,7 @@ sed -i "s/DOMAIN_NAME/$DOMAIN/" certificateRenewer
 sed -i "s/ADMIN_EMAIL/$MAIL_ADDR/" certificateRenewer
 sudo mv certificateRenewer /etc/cron.weekly/
 
-echo "\nLe serveur est prêt à déployer les conteneurs de demo."
+echo "Le serveur est prêt à déployer les conteneurs de demo."
 echo "Exécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo."
 # Déploie les conteneurs de demo
 # "$script_dir/demo_lxc_build.sh"

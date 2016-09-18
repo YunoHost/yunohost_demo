@@ -2,22 +2,19 @@
 
 # Purge l'ensemble de la config lxc pour les conteneurs de demo.
 # Il sera nécessaire de lancer le script demo_lxc_build_init.sh pour réinstaller l'ensemble le cas échéant.
-# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
-if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
 DOMAIN=$(cat "$script_dir/domain.ini")
 
-# Check root
-# CHECK_ROOT=$EUID
-# if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-# if [ $CHECK_ROOT -eq 0 ]
-# then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-#    echo "Le script ne doit pas être exécuté avec les droits root"
-#    exit 1
-# fi
+# Check user
+if [ "$USER" != "$(cat "$script_dir/setup_user")" ]; then
+	echo -e "\e[91mCe script doit être exécuté avec l'utilisateur $(cat "$script_dir/sub_scripts/setup_user")"
+	echo -en "\e[0m"
+	exit 0
+fi
 
 "$script_dir/demo_lxc_destroy.sh"
 

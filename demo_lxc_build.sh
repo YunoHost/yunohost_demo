@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # Créer les conteneurs Yunohost et les configure
-# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
-if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 LOG=Build_lxc.log
 LOG_BUILD_LXC="$script_dir/$LOG"
@@ -23,14 +22,12 @@ MAIL_ADDR=demo@yunohost.org
 USER_DEMO=demo
 PASSWORD_DEMO=demo
 
-# Check root
-# CHECK_ROOT=$EUID
-# if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-# if [ $CHECK_ROOT -eq 0 ]
-# then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-#    echo "Le script ne doit pas être exécuté avec les droits root"
-#    exit 1
-# fi
+# Check user
+if [ "$USER" != "$(cat "$script_dir/setup_user")" ] && test -e "$script_dir/setup_user"; then
+	echo -e "\e[91mCe script doit être exécuté avec l'utilisateur $(cat "$script_dir/setup_user")"
+	echo -en "\e[0m"
+	exit 0
+fi
 
 echo "> Création d'une machine debian jessie minimaliste" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-create -n $LXC_NAME1 -t debian -- -r jessie >> "$LOG_BUILD_LXC" 2>&1
@@ -96,6 +93,53 @@ ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create --firstname \"$USER_DEMO_CLEA
 echo -e "\n> Vérification de l'état de Yunohost" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost -v" | tee -a "$LOG_BUILD_LXC" 2>&1
 
+# ********
+echo ">> Modification de Yunohost pour la demo" | tee -a "$LOG_BUILD_LXC"
+
+# App officielles
+echo -e "> Installation des applications officielles" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de baikal" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install baikal -a \"domain=$DOMAIN&path=/baikal&password=$PASSWORD_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation d'agendav" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav -a \"domain=$DOMAIN&path=/agendav&language=en\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de dokuwiki" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de hextris" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install hextris -a \"domain=$DOMAIN&path=/hextris&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de jappix" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install jappix -a \"domain=$DOMAIN&path=/jappix&name=YunoJappix&language=en\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de jirafeau" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install jirafeau -a \"domain=$DOMAIN&path=/jirafeau&admin_user=$USER_DEMO&upload_password=$PASSWORD_DEMO&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de kanboard" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard -a \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de opensondage" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage -a \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en_GB&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de owncloud" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install owncloud -a \"domain=$DOMAIN&path=/owncloud&admin=$USER_DEMO&user_home=0\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de phpmyadmin" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install phpmyadmin -a \"domain=$DOMAIN&path=/phpmyadmin&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de roundcube" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de searx" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx -a \"domain=$DOMAIN&path=/searx&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de shellinabox" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install shellinabox -a \"domain=$DOMAIN&path=/ssh\"" | tee -a "$LOG_BUILD_LXC"
+sudo rm "/var/lib/lxc/$LXC_NAME1/rootfs/etc/nginx/conf.d/$DOMAIN.d/shellinabox.conf"	# Supprime le fichier de conf nginx de shellinabox pour empêcher d'y accéder.
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app setting shellinabox path -d && sudo yunohost app ssowatconf" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de strut" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut -a \"domain=$DOMAIN&path=/strut&public_site=Yes\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de transmission" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission -a \"domain=$DOMAIN&path=/torrent\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de ttrss" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss -a \"domain=$DOMAIN&path=/ttrss\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de wallabag" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag -a \"domain=$DOMAIN&path=/wallabag\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de wordpress" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress -a \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_EN&multisite=No&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+echo -e "Installation de zerobin" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install zerobin -a \"domain=$DOMAIN&path=/zerobin&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+
+# ********
 
 echo "> Arrêt de la machine virtualisée" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-stop -n $LXC_NAME1 >> "$LOG_BUILD_LXC" 2>&1
@@ -128,11 +172,32 @@ EOF
 echo "> Et du cron d'upgrade"
 echo | sudo tee /etc/cron.d/demo_upgrade <<EOF > /dev/null
 # Vérifie les mises à jour des conteneurs de demo, lorsqu'ils ne sont pas utilisés, à partir de 3h2minutes chaque nuit. Attention à rester sur un multiple du temps de switch.
-2 3 * * * root $script_dir/demo_switch.sh >> "$script_dir/demo_upgrade.log" 2>&1
+2 3 * * * root $script_dir/demo_upgrade.sh >> "$script_dir/demo_upgrade.log" 2>&1
 EOF
 
 echo "> Démarrage de la démo"
 "$script_dir/demo_start.sh"
+
+# echo "> Mise en place du service"
+echo | sudo tee /etc/systemd/system/lxc_demo.service <<EOF > /dev/null
+[Unit]
+Description=Start and stop script for lxc demo container
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=$script_dir/demo_start.sh
+ExecStop=$script_dir/demo_stop.sh
+ExecReload=$script_dir/demo_start.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Démarrage automatique du service
+sudo systemctl enable lxc_demo.service
+sudo service lxc_demo start
 
 # Après le démarrage du premier conteneur, fait un snapshot du deuxième.
 echo "> Création d'un snapshot pour le 2e conteneur" | tee -a "$LOG_BUILD_LXC"

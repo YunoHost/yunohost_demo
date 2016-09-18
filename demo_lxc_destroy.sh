@@ -2,24 +2,21 @@
 
 # Détruit les conteneurs lxc de demo.
 # Permet de repartir sur des bases saines avec le script demo_lxc_build.sh
-# !!! Ce script est conçu pour être exécuté par l'user root.
 
 # Récupère le dossier du script
-if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
 LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
 IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
 IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
 
-# Check root
-# CHECK_ROOT=$EUID
-# if [ -z "$CHECK_ROOT" ];then CHECK_ROOT=0;fi
-# if [ $CHECK_ROOT -eq 0 ]
-# then	# $EUID est vide sur une exécution avec sudo. Et vaut 0 pour root
-#    echo "Le script ne doit pas être exécuté avec les droits root"
-#    exit 1
-# fi
+# Check user
+if [ "$USER" != "$(cat "$script_dir/setup_user")" ]; then
+	echo -e "\e[91mCe script doit être exécuté avec l'utilisateur $(cat "$script_dir/sub_scripts/setup_user")"
+	echo -en "\e[0m"
+	exit 0
+fi
 
 "$script_dir/demo_stop.sh"
 
@@ -38,3 +35,7 @@ sudo rm /etc/cron.d/demo_upgrade
 echo "> Suppression des clés ECDSA dans known_hosts"
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R $IP_LXC1
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R $IP_LXC2
+
+echo "> Suppression du service"
+sudo systemctl disable lutim.service
+sudo rm -f /etc/systemd/system/lxc_demo.service

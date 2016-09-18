@@ -4,7 +4,9 @@
 # Ce script n'a vocation qu'a être dans un cron
 
 # Récupère le dossier du script
-if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
+
+echo "$(date) U. boot upgrade" >> "$script_dir/debug.log"
 
 LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
 LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
@@ -13,9 +15,13 @@ IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
 PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
 TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '=' -f2)
 MAIL_ADDR=$(cat "$script_dir/demo_lxc_build.sh" | grep MAIL_ADDR= | cut -d '=' -f2)
+DOMAIN=$(cat "$script_dir/domain.ini")
 
 IP_UPGRADE=$PLAGE_IP.150
 LOOP=0
+
+log_line=$(wc -l "$script_dir/demo_upgrade.log" | cut -d ' ' -f 1)	# Repère la fin du log actuel. Pour récupérer les lignes ajoutées sur cette exécution.
+log_line=$(( $log_line + 1 ))	# Ignore la première ligne, reprise de l'ancien log.
 
 UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	MACHINE=$1
@@ -25,11 +31,11 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	TIME_OUT=$(($TIME_TO_SWITCH * 60 + 300))
 	sudo lxc-wait -n $MACHINE -s 'STOPPED' -t $TIME_OUT
 
-	while sudo test -e /var/lib/lxc/$MACHINE/lock_file; do
+	while test -e /var/lib/lxc/$MACHINE.lock_fileS; do
 		sleep 5	# Attend que le conteneur soit libéré par le script switch.
 	done
 
-	sudo touch /var/lib/lxc/$MACHINE/lock_file	# Met en place un fichier pour indiquer que la machine est indisponible pendant l'upgrade
+	sudo touch /var/lib/lxc/$MACHINE.lock_fileU	# Met en place un fichier pour indiquer que la machine est indisponible pendant l'upgrade
 
 	# Restaure le snapshot
 	sudo lxc-snapshot -r snap0 -n $MACHINE
@@ -38,7 +44,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	sudo sed -i "s@address $IP_MACHINE@address $IP_UPGRADE@" /var/lib/lxc/$MACHINE/rootfs/etc/network/interfaces
 
 	# Démarre le conteneur
-	sudo lxc-start -n $MACHINE -d > /dev/null
+	sudo lxc-start -n $MACHINE -o "$script_dir/demo_boot.log" -d > /dev/null
 	sleep 10
 
 	# Update
@@ -49,9 +55,9 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 		update_apt=1
 	fi
 	# Upgrade
-	sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade
+	sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade -y
 	# Clean
-	sudo lxc-attach -n $MACHINE -- apt-get autoremove
+	sudo lxc-attach -n $MACHINE -- apt-get autoremove -y
 	sudo lxc-attach -n $MACHINE -- apt-get autoclean
 
 	# Exécution des scripts de upgrade.d
@@ -65,8 +71,9 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 			if [ "$?" -ne 0 ]; then	# Si le script a échoué, le snapshot est annulé.
 				echo "Échec du script $LIGNE"
 				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/$LIGNE.fail"
-				mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR <<< "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré."
+				echo -e "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo $DOMAIN!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré.\n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_upgrade.log")" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
 				update_apt=0
+			fi
 		fi
 	done
 
@@ -95,7 +102,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 			done
 		fi
 	fi
-	sudo rm /var/lib/lxc/$MACHINE/lock_file	# Libère le lock, la machine est à nouveau disponible
+	sudo rm /var/lib/lxc/$MACHINE.lock_fileU	# Libère le lock, la machine est à nouveau disponible
 }
 
 UPGRADE_DEMO_CONTAINER $LXC_NAME1 $IP_LXC1
