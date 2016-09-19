@@ -31,5 +31,8 @@ Il va alterner toutes les 30 minutes (par défaut) les 2 conteneurs et rétablir
 Ce script est placé en cron par demo_lxc_build.  
 demo_upgrade vérifie chaque nuit les mises à jour sur les conteneurs, et les applique le cas échéant. Si nécessaire, il se charge également de refaire le snapshot.
 
+## demo_restore_crash
+Tente de réparer les conteneurs qui ne démarre pas à partir des snapshots ou des archives de snapshots précédents.
+
 Pour effectuer des modifications pérennes sur les conteneurs, il est possible d'ajouter des scripts dans le dossier upgrade.d. Ces scripts seront exécutés après l'upgrade des packages dans chaque conteneur.
 En cas d'échec d'exécution, le script sera mis de côté en attendant sa correction. Sinon, il sera archivé.
