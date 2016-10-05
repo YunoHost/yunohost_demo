@@ -67,11 +67,10 @@ EOF
 
 echo "> Mise en place du reverse proxy et du load balancing" | tee -a "$LOG_BUILD_LXC"
 echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF >> "$LOG_BUILD_LXC" 2>&1
-upstream $DOMAIN  {
-  server $IP_LXC1:80 ;
-  server $IP_LXC1:443 ;
-  server $IP_LXC2:443 ;
-}
+#upstream $DOMAIN  {
+#  server $IP_LXC1:443 ;
+#  server $IP_LXC2:443 ;
+#}
 
 server {
 	listen 80;
@@ -83,9 +82,9 @@ server {
 		root         /tmp/letsencrypt-auto;
 	}
 
-	if (\$scheme = http) {
-		rewrite ^ https://\$server_name\$request_uri? permanent;
-	}
+#	if (\$scheme = http) {
+#		rewrite ^ https://\$server_name\$request_uri? permanent;
+#	}
 
 	access_log /var/log/nginx/$DOMAIN-access.log;
 	error_log /var/log/nginx/$DOMAIN-error.log;
@@ -96,8 +95,8 @@ server {
 	listen [::]:443 ssl;
 	server_name $DOMAIN;
 
-	ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-	ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+#	ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+#	ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 	ssl_session_timeout 5m;
 	ssl_session_cache shared:SSL:50m;
 	ssl_prefer_server_ciphers on;
@@ -163,9 +162,11 @@ mkdir -p /tmp/letsencrypt-auto
 sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN
 
 # Route l'upstream sur le port 443. Le port 80 servait uniquement à let's encrypt
-sudo sed -i "s/server $IP_LXC1:80 ;/server $IP_LXC1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
+# sudo sed -i "s/server $IP_LXC1:80 ;/server $IP_LXC1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
 # Décommente les lignes du certificat
-sudo sed -i "s/#\tssl_certificate/\tssl_certificate/g" /etc/nginx/conf.d/$DOMAIN.conf
+# sudo sed -i "s/#\tssl_certificate/\tssl_certificate/g" /etc/nginx/conf.d/$DOMAIN.conf
+# Supprime les commentaires dans la conf nginx
+sudo sed -i "s/^#//g" /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
 
 
