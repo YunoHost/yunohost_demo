@@ -124,8 +124,6 @@ echo -e "Installation de searx" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx -a \"domain=$DOMAIN&path=/searx&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
 echo -e "Installation de shellinabox" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install shellinabox -a \"domain=$DOMAIN&path=/ssh\"" | tee -a "$LOG_BUILD_LXC"
-sudo rm "/var/lib/lxc/$LXC_NAME1/rootfs/etc/nginx/conf.d/$DOMAIN.d/shellinabox.conf"	# Supprime le fichier de conf nginx de shellinabox pour empêcher d'y accéder.
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app setting shellinabox path -d && sudo yunohost app ssowatconf" | tee -a "$LOG_BUILD_LXC"
 echo -e "Installation de strut" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut -a \"domain=$DOMAIN&path=/strut&public_site=Yes\"" | tee -a "$LOG_BUILD_LXC"
 echo -e "Installation de transmission" | tee -a "$LOG_BUILD_LXC"
@@ -138,6 +136,14 @@ echo -e "Installation de wordpress" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress -a \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_EN&multisite=No&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
 echo -e "Installation de zerobin" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install zerobin -a \"domain=$DOMAIN&path=/zerobin&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+
+# Désactive l'accès à shellinabox
+sudo rm "/var/lib/lxc/$LXC_NAME1/rootfs/etc/nginx/conf.d/$DOMAIN.d/shellinabox.conf"	# Supprime le fichier de conf nginx de shellinabox pour empêcher d'y accéder.
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app setting shellinabox path -d && sudo yunohost app setting shellinabox domain -d && sudo yunohost app ssowatconf" | tee -a "$LOG_BUILD_LXC"
+
+# Indique le couple login/mot de passe demo/demo
+sed -i "3i\<center>Login: demo / Password: demo</center>" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html # Sur le login du portail
+sed -i "17i\&emsp;&emsp;&emsp;Password: demo" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms    # Et sur le login admin
 
 # ********
 

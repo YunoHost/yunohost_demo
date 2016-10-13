@@ -48,32 +48,38 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	# Update
 	update_apt=0
 	sudo lxc-attach -n $MACHINE -- apt-get update
-	sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade --dry-run | grep -q "^Inst "	# Vérifie si il y aura des mises à jour.
+	sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade --dry-run | grep -q "^Inst " > /dev/null	# Vérifie si il y aura des mises à jour.
 	if [ "$?" -eq 0 ]; then
-		update_apt=1
+            date
+            update_apt=1
+            # Upgrade
+            sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade -y
+            # Clean
+            sudo lxc-attach -n $MACHINE -- apt-get autoremove -y
+            sudo lxc-attach -n $MACHINE -- apt-get autoclean
 	fi
-	# Upgrade
-	sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade -y
-	# Clean
-	sudo lxc-attach -n $MACHINE -- apt-get autoremove -y
-	sudo lxc-attach -n $MACHINE -- apt-get autoclean
 
 	# Exécution des scripts de upgrade.d
 	LOOP=$((LOOP + 1))
-	ls -1 "$script_dir/upgrade.d" | while read LIGNE
+	while read LIGNE
 	do
 		if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
 		then
+			date
 			# Exécute chaque script trouvé dans upgrade.d
+			echo "Exécution du script $LIGNE sur le conteneur $MACHINE"
 			/bin/bash "$script_dir/upgrade.d/$LIGNE" $MACHINE
 			if [ "$?" -ne 0 ]; then	# Si le script a échoué, le snapshot est annulé.
 				echo "Échec du script $LIGNE"
 				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/$LIGNE.fail"
 				echo -e "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo $DOMAIN!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré.\n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_upgrade.log")" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
 				update_apt=0
+			else
+				echo "Le script $LIGNE a été exécuté sans erreur"
+				update_apt=1
 			fi
 		fi
-	done
+	done <<< "$(ls -1 "$script_dir/upgrade.d")"
 
 	# Arrêt de la machine virtualisée
 	sudo lxc-stop -n $MACHINE
