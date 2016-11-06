@@ -166,9 +166,9 @@ sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN
 # Décommente les lignes du certificat
 # sudo sed -i "s/#\tssl_certificate/\tssl_certificate/g" /etc/nginx/conf.d/$DOMAIN.conf
 # Supprime les commentaires dans la conf nginx
+
 sudo sed -i "s/^#//g" /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
-
 
 # Mise en place du cron de renouvellement.
 wget https://raw.githubusercontent.com/YunoHost-Apps/letsencrypt_ynh/master/sources/certificateRenewer
