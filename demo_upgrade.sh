@@ -42,6 +42,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	sudo sed -i "s@address $IP_MACHINE@address $IP_UPGRADE@" /var/lib/lxc/$MACHINE/rootfs/etc/network/interfaces
 
 	# Démarre le conteneur
+	date >> "$script_dir/demo_boot.log
 	sudo lxc-start -n $MACHINE -o "$script_dir/demo_boot.log" -d > /dev/null
 	sleep 10
 
