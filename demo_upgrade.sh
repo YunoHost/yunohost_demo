@@ -109,5 +109,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	sudo rm /var/lib/lxc/$MACHINE.lock_fileU	# Libère le lock, la machine est à nouveau disponible
 }
 
+echo ""
+date
 UPGRADE_DEMO_CONTAINER $LXC_NAME1 $IP_LXC1
 UPGRADE_DEMO_CONTAINER $LXC_NAME2 $IP_LXC2
