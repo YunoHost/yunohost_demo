@@ -20,7 +20,7 @@ fi
 
 "$script_dir/demo_stop.sh"
 
-echo "> Suppression des conteneurs et de leur snapshots"
+echo -e "\e[1m> Suppression des conteneurs et de leur snapshots\e[0m"
 sudo lxc-snapshot -n $LXC_NAME1 -d snap0
 sudo rm -f /var/lib/lxcsnaps/$LXC_NAME1/snap0.tar.gz
 sudo lxc-destroy -n $LXC_NAME1 -f
@@ -28,14 +28,14 @@ sudo lxc-snapshot -n $LXC_NAME2 -d snap0
 sudo rm -f /var/lib/lxcsnaps/$LXC_NAME2/snap0.tar.gz
 sudo lxc-destroy -n $LXC_NAME2 -f
 
-echo "> Suppression des crons"
+echo -e "\e[1m> Suppression des crons\e[0m"
 sudo rm /etc/cron.d/demo_switch
 sudo rm /etc/cron.d/demo_upgrade
 
-echo "> Suppression des clés ECDSA dans known_hosts"
+echo -e "\e[1m> Suppression des clés ECDSA dans known_hosts\e[0m"
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R $IP_LXC1
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R $IP_LXC2
 
-echo "> Suppression du service"
+echo -e "\e[1m> Suppression du service\e[0m"
 sudo systemctl disable lutim.service
 sudo rm -f /etc/systemd/system/lxc_demo.service

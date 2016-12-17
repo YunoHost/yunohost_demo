@@ -23,15 +23,15 @@ echo "$DOMAIN" > "$script_dir/domain.ini"
 # Créer le dossier de log
 sudo mkdir -p $(dirname $LOG_BUILD_LXC)
 
-echo "> Update et install lxc, lxctl et mailutils" | tee "$LOG_BUILD_LXC"
+echo -e "\e[1m> Update et install lxc, lxctl et mailutils\e[0m" | tee "$LOG_BUILD_LXC"
 sudo apt-get update >> "$LOG_BUILD_LXC" 2>&1
 sudo apt-get install -y lxc lxctl mailutils >> "$LOG_BUILD_LXC" 2>&1
 
-echo "> Autoriser l'ip forwarding, pour router vers la machine virtuelle." | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Autoriser l'ip forwarding, pour router vers la machine virtuelle.\e[0m" | tee -a "$LOG_BUILD_LXC"
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/lxc_demo.conf >> "$LOG_BUILD_LXC" 2>&1
 sudo sysctl -p /etc/sysctl.d/lxc_demo.conf >> "$LOG_BUILD_LXC" 2>&1
 
-echo "> Ajoute un brige réseau pour la machine virtualisée" | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Ajoute un brige réseau pour la machine virtualisée\e[0m" | tee -a "$LOG_BUILD_LXC"
 echo | sudo tee /etc/network/interfaces.d/lxc_demo <<EOF >> "$LOG_BUILD_LXC" 2>&1
 auto lxc_demo
 iface lxc_demo inet static
@@ -41,10 +41,10 @@ iface lxc_demo inet static
         bridge_maxwait 0
 EOF
 
-echo "> Active le bridge réseau" | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
 
-echo "> Mise en place de la connexion ssh vers l'invité." | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Mise en place de la connexion ssh vers l'invité.\e[0m" | tee -a "$LOG_BUILD_LXC"
 if [ -e $HOME/.ssh/$LXC_NAME1 ]; then
 	rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
 	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC1
@@ -65,7 +65,7 @@ IdentityFile $HOME/.ssh/$LXC_NAME1
 # End ssh $LXC_NAME1
 EOF
 
-echo "> Mise en place du reverse proxy et du load balancing" | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Mise en place du reverse proxy et du load balancing\e[0m" | tee -a "$LOG_BUILD_LXC"
 echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF >> "$LOG_BUILD_LXC" 2>&1
 #upstream $DOMAIN  {
 #  server $IP_LXC1:443 ;
@@ -121,7 +121,7 @@ EOF
 
 sudo service nginx reload
 
-echo "> Installation de let's encrypt et création du certificat SSL." | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Installation de let's encrypt et création du certificat SSL.\e[0m" | tee -a "$LOG_BUILD_LXC"
 cd ~
 # Télécharge let's encrypt
 git clone https://github.com/letsencrypt/letsencrypt
@@ -176,7 +176,7 @@ sed -i "s/DOMAIN_NAME/$DOMAIN/" certificateRenewer
 sed -i "s/ADMIN_EMAIL/$MAIL_ADDR/" certificateRenewer
 sudo mv certificateRenewer /etc/cron.weekly/
 
-echo "Le serveur est prêt à déployer les conteneurs de demo."
-echo "Exécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo."
+echo -e "\e[1mLe serveur est prêt à déployer les conteneurs de demo.\e[0m"
+echo -e "\e[1mExécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo.\e[0m"
 # Déploie les conteneurs de demo
 # "$script_dir/demo_lxc_build.sh"

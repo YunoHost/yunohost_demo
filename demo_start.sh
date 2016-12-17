@@ -29,7 +29,7 @@ fi
 
 # Démarrage de la machine
 echo "> Démarrage de la machine"
-date >> "$script_dir/demo_boot.log
+date >> "$script_dir/demo_boot.log"
 sudo lxc-start -n $LXC_NAME -o "$script_dir/demo_boot.log" -d
 sleep 3
 

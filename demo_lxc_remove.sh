@@ -18,29 +18,29 @@ fi
 
 "$script_dir/demo_lxc_destroy.sh"
 
-echo "> Retire l'ip forwarding."
+echo -e "\e[1m> Retire l'ip forwarding.\e[0m"
 sudo rm /etc/sysctl.d/lxc_demo.conf
 sudo sysctl -p
 
-echo "> Supprime le brige réseau"
+echo -e "\e[1m> Supprime le brige réseau\e[0m"
 sudo rm /etc/network/interfaces.d/lxc_demo
 
-echo "> Remove lxc lxctl"
+echo -e "\e[1m> Remove lxc lxctl\e[0m"
 sudo apt-get remove lxc lxctl
 
-echo "> Suppression de la clé SSH"
+echo -e "\e[1m> Suppression de la clé SSH\e[0m"
 rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
-echo "> Et de sa config spécifique dans $HOME/.ssh/config"
+echo -e "\e[1m> Et de sa config spécifique dans $HOME/.ssh/config\e[0m"
 BEGIN_LINE=$(cat $HOME/.ssh/config | grep -n "^# ssh $LXC_NAME1" | cut -d':' -f 1)
 sed -i "$BEGIN_LINE,/^# End ssh $LXC_NAME1/d" $HOME/.ssh/config
 
 # Suppression du reverse proxy
-echo "> Suppression de la config nginx"
+echo -e "\e[1m> Suppression de la config nginx\e[0m"
 sudo rm /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
 
 # Suppression du certificat Let's encrypt
-echo "> Suppression de Let's encrypt"
+echo -e "\e[1m> Suppression de Let's encrypt\e[0m"
 sudo rm -r /etc/letsencrypt
 sudo rm -r ~/.local/share/letsencrypt
 sudo rm -r ~/letsencrypt
