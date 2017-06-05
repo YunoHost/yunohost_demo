@@ -37,5 +37,5 @@ ssh-keygen -f "$HOME/.ssh/known_hosts" -R $IP_LXC1
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R $IP_LXC2
 
 echo -e "\e[1m> Suppression du service\e[0m"
-sudo systemctl disable lutim.service
+sudo systemctl disable lxc_demo.service
 sudo rm -f /etc/systemd/system/lxc_demo.service

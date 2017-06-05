@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Ce script est un script d'exemple à dupliquer pour effectuer des modifications pérennes dans les conteneurs de demo.
+# Le script n'est pas exécuté dans le conteneur, il convient donc d'utiliser lxc-attach pour opérer à l'intérieur.
+# L'ensemble des scripts ajoutés ici seront exécutés après chaque upgrade des conteneurs dans la nuit, si une mise à jour a été effectivement opérée.
+# Toutefois, l'exécution sera loggée dans $script_dir/demo_upgrade.log
+
+# Attention, veillez à vérifier que les fichiers doivent être modifiés avant de réappliquer le patch
+
+# Récupère le dossier du script
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+
+MACHINE=$1      # Nom du conteneur
+
+sed -i "s/<input type=\"submit\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/<input type=\"\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/g" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/domain/domain_add.ms

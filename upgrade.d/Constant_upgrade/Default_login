@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Ce script est un script d'exemple à dupliquer pour effectuer des modifications pérennes dans les conteneurs de demo.
+# Le script n'est pas exécuté dans le conteneur, il convient donc d'utiliser lxc-attach pour opérer à l'intérieur.
+# L'ensemble des scripts ajoutés ici seront exécutés après chaque upgrade des conteneurs dans la nuit, si une mise à jour a été effectivement opérée.
+# Toutefois, l'exécution sera loggée dans $script_dir/demo_upgrade.log
+
+# Attention, veillez à vérifier que les fichiers doivent être modifiés avant de réappliquer le patch
+
+# Récupère le dossier du script
+if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
+
+MACHINE=$1      # Nom du conteneur
+
+# Ajoute demo:demo par défaut pour le login et le password sur le portail
+sed -i "s/id=\"user\" type=\"text\" name=\"user\" placeholder/id=\"user\" type=\"text\" name=\"user\" value=\"demo\" placeholder/" /var/lib/lxc/$MACHINE/rootfs/usr/share/ssowat/portal/login.html
+sed -i "s/id=\"password\" type=\"password\" name=\"password\" placeholder/id=\"password\" type=\"password\" name=\"password\" value=\"demo\" placeholder/" /var/lib/lxc/$MACHINE/rootfs/usr/share/ssowat/portal/login.html
+
+# Idem sur l'admin
+sed -i "s/type=\"password\" id=\"password\" name=\"password\" class/type=\"password\" id=\"password\" name=\"password\" value=\"demo\" class/" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/login.ms

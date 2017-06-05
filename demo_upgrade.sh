@@ -64,7 +64,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	LOOP=$((LOOP + 1))
 	while read LIGNE
 	do
-		if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
+		if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && [ ! "$LIGNE" == "Constant_upgrade" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
 		then
 			date
 			# Exécute chaque script trouvé dans upgrade.d
@@ -81,6 +81,24 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 			fi
 		fi
 	done <<< "$(ls -1 "$script_dir/upgrade.d")"
+
+	# Exécution des scripts de upgrade.d/Constant_upgrade
+	while read LIGNE
+	do
+		if [ "$update_apt" -eq "1" ]
+		then
+			date
+			# Exécute chaque script trouvé dans upgrade.d/Constant_upgrade
+			echo "Exécution du script $LIGNE sur le conteneur $MACHINE"
+			/bin/bash "$script_dir/upgrade.d/Constant_upgrade/$LIGNE" $MACHINE
+			if [ "$?" -ne 0 ]; then
+				echo "Échec du script $LIGNE"
+				echo -e "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo $DOMAIN!\n"
+			else
+				echo "Le script $LIGNE a été exécuté sans erreur"
+			fi
+		fi
+	done <<< "$(ls -1 "$script_dir/upgrade.d/Constant_upgrade")"
 
 	# Arrêt de la machine virtualisée
 	sudo lxc-stop -n $MACHINE

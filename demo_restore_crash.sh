@@ -79,7 +79,7 @@ CLONE_CONTAINER () {
 	echo "Modification de l'ip du clone,"
 	sudo sed -i "s@address $IP_SOURCE@address $IP_CIBLE@" /var/lib/lxc/$MACHINE_CIBLE/rootfs/etc/network/interfaces
 	echo "du nom du veth"
-	sudo sed -i "s@^lxc.network.veth.pair = MACHINE_SOURCE@lxc.network.veth.pair = $MACHINE_CIBLE@" /var/lib/lxc/$MACHINE_CIBLE/config
+	sudo sed -i "s@$MACHINE_SOURCE@$MACHINE_CIBLE@g" /var/lib/lxc/$MACHINE_CIBLE/config
 	echo "Et enfin renseigne /etc/hosts sur le clone"
 	sudo sed -i "s@^127.0.0.1 $MACHINE_SOURCE@127.0.0.1 $MACHINE_CIBLE@" /var/lib/lxc/$MACHINE_CIBLE/rootfs/etc/hosts
 

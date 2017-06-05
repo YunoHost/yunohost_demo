@@ -82,10 +82,6 @@ server {
 		root         /tmp/letsencrypt-auto;
 	}
 
-#	if (\$scheme = http) {
-#		rewrite ^ https://\$server_name\$request_uri? permanent;
-#	}
-
 	access_log /var/log/nginx/$DOMAIN-access.log;
 	error_log /var/log/nginx/$DOMAIN-error.log;
 }
