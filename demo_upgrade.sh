@@ -100,6 +100,12 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 		fi
 	done <<< "$(ls -1 "$script_dir/upgrade.d/Constant_upgrade")"
 
+	# Upgrade des apps
+	sudo lxc-attach -n $MACHINE -- yunohost app fetchlist
+	sudo lxc-attach -n $MACHINE -- service nginx restart
+	sudo lxc-attach -n $MACHINE -- yunohost app upgrade
+	sudo lxc-attach -n $MACHINE -- service nginx restart
+
 	# Arrêt de la machine virtualisée
 	sudo lxc-stop -n $MACHINE
 
@@ -118,7 +124,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 		then	# Après l'upgrade du 2e conteneur, déplace les scripts dans le dossier des anciens scripts si ils ont été exécutés avec succès.
 			ls -1 "$script_dir/upgrade.d" | while read LIGNE
 			do
-				if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
+				if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && [ ! "$LIGNE" == "Constant_upgrade" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
 				then
 					mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/old_scripts/$LIGNE"
 				fi
