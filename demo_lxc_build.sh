@@ -133,7 +133,7 @@ ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission -a \"domain=$DOM
 echo -e "\e[36mInstallation de ttrss\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss -a \"domain=$DOMAIN&path=/ttrss\"" | tee -a "$LOG_BUILD_LXC"
 echo -e "\e[36mInstallation de wallabag\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag -a \"domain=$DOMAIN&path=/wallabag\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag_2 -a \"domain=$DOMAIN&path=/wallabag\"" | tee -a "$LOG_BUILD_LXC"
 echo -e "\e[36mInstallation de wordpress\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress -a \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_EN&multisite=No&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
 echo -e "\e[36mInstallation de zerobin\e[0m" | tee -a "$LOG_BUILD_LXC"
