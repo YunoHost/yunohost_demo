@@ -41,6 +41,26 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	# Change l'ip du conteneur le temps de l'upgrade. Pour empêcher HAProxy de basculer sur le conteneur.
 	sudo sed -i "s@address $IP_MACHINE@address $IP_UPGRADE@" /var/lib/lxc/$MACHINE/rootfs/etc/network/interfaces
 
+	# Active le bridge réseau
+	if ! sudo ifquery lxc_demo --state > /dev/null
+	then
+		sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo
+	fi
+
+	# Configure le parefeu
+	if ! sudo iptables -D FORWARD -i lxc_demo -o eth0 -j ACCEPT 2> /dev/null
+	then
+		sudo iptables -A FORWARD -i lxc_demo -o eth0 -j ACCEPT
+	fi
+	if ! sudo iptables -C FORWARD -i eth0 -o lxc_demo -j ACCEPT 2> /dev/null
+	then
+		sudo iptables -A FORWARD -i eth0 -o lxc_demo -j ACCEPT
+	fi
+	if ! sudo iptables -t nat -C POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE 2> /dev/null
+	then
+		sudo iptables -t nat -A POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE
+	fi
+
 	# Démarre le conteneur
 	date >> "$script_dir/demo_boot.log"
 	sudo lxc-start -n $MACHINE -o "$script_dir/demo_boot.log" -d > /dev/null
@@ -54,7 +74,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
             date
             update_apt=1
             # Upgrade
-            sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade -y
+            sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade --option Dpkg::Options::=--force-confold -yy
             # Clean
             sudo lxc-attach -n $MACHINE -- apt-get autoremove -y
             sudo lxc-attach -n $MACHINE -- apt-get autoclean

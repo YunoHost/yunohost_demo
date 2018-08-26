@@ -18,9 +18,33 @@ LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
  # En minutes
 MAIL_ADDR=demo@yunohost.org
+dns_force=0
+main_iface=
+dns=
 
 USER_DEMO=demo
 PASSWORD_DEMO=demo
+
+# Tente de définir l'interface réseau principale
+if [ -z $main_iface ]	# Si main_iface est vide, tente de le trouver.
+then
+# 	main_iface=$(sudo route | grep default.*0.0.0.0 -m1 | awk '{print $8;}')	# Prend l'interface réseau défini par default
+	main_iface=$(sudo ip route | grep default | awk '{print $5;}')	# Prend l'interface réseau défini par default
+	if [ -z $main_iface ]; then
+		echo -e "\e[91mImpossible de déterminer le nom de l'interface réseau de l'hôte.\e[0m"
+		exit 1
+	fi
+fi
+
+if [ -z $dns ]	# Si l'adresse du dns est vide, tente de le déterminer à partir de la passerelle par défaut.
+then
+# 	dns=$(sudo route -n | grep ^0.0.0.0.*$main_iface | awk '{print $2;}')
+	dns=$(sudo ip route | grep default | awk '{print $3;}')
+	if [ -z $dns ]; then
+		echo -e "\e[91mImpossible de déterminer l'adresse de la passerelle.\e[0m"
+		exit 1
+	fi
+fi
 
 # Check user
 if [ "$USER" != "$(cat "$script_dir/setup_user")" ] && test -e "$script_dir/setup_user"; then
@@ -29,8 +53,16 @@ if [ "$USER" != "$(cat "$script_dir/setup_user")" ] && test -e "$script_dir/setu
 	exit 0
 fi
 
-echo -e "\e[1m> Création d'une machine debian jessie minimaliste\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo lxc-create -n $LXC_NAME1 -t debian -- -r jessie >> "$LOG_BUILD_LXC" 2>&1
+sudo mkdir -p /var/lib/lxcsnaps	# Créer le dossier lxcsnaps, pour s'assurer que lxc utilisera ce dossier, même avec lxc 2.
+
+if sudo lxc-info -n $LXC_NAME > /dev/null 2>&1
+then	# Si le conteneur existe déjà
+	echo -e "\e[1m> Suppression du conteneur existant.\e[0m" | tee -a "$LOG_BUILD_LXC"
+	"$script_dir/demo_lxc_remove.sh" quiet | tee -a "$LOG_BUILD_LXC"
+fi
+
+echo -e "\e[1m> Création d'une machine debian stretch minimaliste\e[0m" | tee -a "$LOG_BUILD_LXC"
+sudo lxc-create -n $LXC_NAME1 -t debian -- -r stretch >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
@@ -46,21 +78,28 @@ sudo iptables -A FORWARD -i lxc_demo -o eth0 -j ACCEPT >> "$LOG_BUILD_LXC" 2>&1
 sudo iptables -A FORWARD -i eth0 -o lxc_demo -j ACCEPT >> "$LOG_BUILD_LXC" 2>&1
 sudo iptables -t nat -A POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE >> "$LOG_BUILD_LXC" 2>&1
 
+echo -e "\e[1m> Vérification du contenu du resolv.conf\e[0m" | tee -a "$LOG_BUILD_LXC"
+if ! sudo cat /var/lib/lxc/$LXC_NAME1/rootfs/etc/resolv.conf | grep -q nameserver; then
+	dnsforce=1	# Le resolv.conf est vide, on force l'ajout d'un dns.
+fi
+if [ $dnsforce -eq 1 ]; then	# Force la réécriture du resolv.conf
+	echo "nameserver $dns" | sudo tee /var/lib/lxc/$LXC_NAME1/rootfs/etc/resolv.conf
+fi
+
+# Fix an issue with apparmor when the container start.
+echo -e "\n# Fix apparmor issues\nlxc.aa_profile = unconfined" | sudo tee -a /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+
 echo -e "\e[1m> Démarrage de la machine\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo lxc-start -n $LXC_NAME1 -d >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-start -n $LXC_NAME1 -d --logfile "$script_dir/lxc_boot.log" >> "$LOG_BUILD_LXC" 2>&1
 sleep 3
 sudo lxc-ls -f >> "$LOG_BUILD_LXC" 2>&1
 
-echo -e "\e[1m> Update et install tasksel sudo git\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Update et install aptitude sudo git\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-attach -n $LXC_NAME1 -- apt-get update
-sudo lxc-attach -n $LXC_NAME1 -- apt-get install -y tasksel sudo git
+sudo lxc-attach -n $LXC_NAME1 -- apt-get install -y aptitude sudo git ssh openssh-server
 echo -e "\e[1m> Installation des paquets standard et ssh-server\e[0m" | tee -a "$LOG_BUILD_LXC"
-tasksell_exit=1
-while [ "$tasksell_exit" -ne 0 ]
-do
-	sudo lxc-attach -n $LXC_NAME1 -- tasksel install standard ssh-server
-	tasksell_exit=$?
-done
+sudo lxc-attach -n $LXC_NAME1 -- aptitude install -y ~pstandard ~prequired ~pimportant
+
 echo -e "\e[1m> Renseigne /etc/hosts sur l'invité\e[0m" | tee -a "$LOG_BUILD_LXC"
 echo "127.0.0.1 $LXC_NAME1" | sudo tee -a /var/lib/lxc/$LXC_NAME1/rootfs/etc/hosts >> "$LOG_BUILD_LXC" 2>&1
 
@@ -75,10 +114,17 @@ sudo mkdir /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh >> "$LOG_BUILD_LXC"
 sudo cp $HOME/.ssh/$LXC_NAME1.pub /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh/authorized_keys >> "$LOG_BUILD_LXC" 2>&1
 sudo lxc-attach -n $LXC_NAME1 -- chown ssh_demo -R /home/ssh_demo/.ssh >> "$LOG_BUILD_LXC" 2>&1
 
-ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une premier connexion SSH pour valider la clé.
+ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une première connexion SSH pour valider la clé.
 if [ "$?" -ne 0 ]; then	# Si l'utilisateur tarde trop, la connexion sera refusée... ???
 	ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une premier connexion SSH pour valider la clé.
 fi
+
+# Fix ssh common issues with stretch "No supported key exchange algorithms"
+sudo lxc-attach -n $LXC_NAME -- dpkg-reconfigure openssh-server  >> "$LOG_BUILD_LXC" 2>&1
+
+# Fix locales issue
+sudo lxc-attach -n $LXC_NAME -- locale-gen en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
 
 ssh $ARG_SSH $LXC_NAME1 "git clone https://github.com/YunoHost/install_script /tmp/install_script" >> "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Installation de Yunohost...\e[0m" | tee -a "$LOG_BUILD_LXC"
@@ -98,46 +144,75 @@ echo -e "\e[1m>> Modification de Yunohost pour la demo\e[0m" | tee -a "$LOG_BUIL
 
 # App officielles
 echo -e "\e[1m> Installation des applications officielles\e[0m" | tee -a "$LOG_BUILD_LXC"
+# Ampache
+echo -e "\e[36mInstallation de Ampache\e[0m" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ampache -a \"domain=$DOMAIN&path=/ampache&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+# Baikal
 echo -e "\e[36mInstallation de baikal\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install baikal -a \"domain=$DOMAIN&path=/baikal&password=$PASSWORD_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+# Agendav
 echo -e "\e[36mInstallation d'agendav\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav -a \"domain=$DOMAIN&path=/agendav&language=en\"" | tee -a "$LOG_BUILD_LXC"
+# Dokuwiki
 echo -e "\e[36mInstallation de dokuwiki\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Etherpad
+echo -e "\e[36mInstallation de etherpad\e[0m" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads -a \"domain=$DOMAIN&path=/etherpad&admin=$USER_DEMO&password=$PASSWORD_DEMO&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
+# Hextris
 echo -e "\e[36mInstallation de hextris\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install hextris -a \"domain=$DOMAIN&path=/hextris&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install hextris -a \"domain=$DOMAIN&path=/hextris&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Jirafeau
 echo -e "\e[36mInstallation de jirafeau\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install jirafeau -a \"domain=$DOMAIN&path=/jirafeau&admin_user=$USER_DEMO&upload_password=$PASSWORD_DEMO&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install jirafeau -a \"domain=$DOMAIN&path=/jirafeau&admin_user=$USER_DEMO&upload_password=$PASSWORD_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Kanboard
 echo -e "\e[36mInstallation de kanboard\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard -a \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard -a \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Nextcloud
 echo -e "\e[36mInstallation de nextcloud\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud -a \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0\"" | tee -a "$LOG_BUILD_LXC"
+# Opensondage
 echo -e "\e[36mInstallation de opensondage\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage -a \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en_GB&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage -a \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Phpmyadmin
 echo -e "\e[36mInstallation de phpmyadmin\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install phpmyadmin -a \"domain=$DOMAIN&path=/phpmyadmin&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+# Piwigo
 echo -e "\e[36mInstallation de piwigo\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo -a \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
+# Rainloop
 echo -e "\e[36mInstallation de rainloop\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=admin&ldap=Yes&lang=English\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=0&password=$PASSWORD_DEMO&ldap=Yes&lang=English\"" | tee -a "$LOG_BUILD_LXC"
+# Roundcube
 echo -e "\e[36mInstallation de roundcube\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0\"" | tee -a "$LOG_BUILD_LXC"
+# Searx
 echo -e "\e[36mInstallation de searx\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx -a \"domain=$DOMAIN&path=/searx&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx -a \"domain=$DOMAIN&path=/searx&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Shellinabox
 echo -e "\e[36mInstallation de shellinabox\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install shellinabox -a \"domain=$DOMAIN&path=/ssh\"" | tee -a "$LOG_BUILD_LXC"
+# Strut
 echo -e "\e[36mInstallation de strut\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut -a \"domain=$DOMAIN&path=/strut&public_site=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut -a \"domain=$DOMAIN&path=/strut&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Synapse
+echo -e "\e[36mInstallation de synapse\e[0m" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install synapse -a \"domain=$DOMAIN&is_public=0\"" | tee -a "$LOG_BUILD_LXC"
+# Transmission
 echo -e "\e[36mInstallation de transmission\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission -a \"domain=$DOMAIN&path=/torrent\"" | tee -a "$LOG_BUILD_LXC"
+# Ttrss
 echo -e "\e[36mInstallation de ttrss\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss -a \"domain=$DOMAIN&path=/ttrss\"" | tee -a "$LOG_BUILD_LXC"
+# Wallabag
 echo -e "\e[36mInstallation de wallabag\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag -a \"domain=$DOMAIN&path=/wallabag\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 -a \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+# Wordpress
 echo -e "\e[36mInstallation de wordpress\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress -a \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_EN&multisite=No&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress -a \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_EN&multisite=0&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+# Zerobin
 echo -e "\e[36mInstallation de zerobin\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install zerobin -a \"domain=$DOMAIN&path=/zerobin&is_public=Yes\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install zerobin -a \"domain=$DOMAIN&path=/zerobin&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 
 # Désactive l'accès à shellinabox
 sudo rm "/var/lib/lxc/$LXC_NAME1/rootfs/etc/nginx/conf.d/$DOMAIN.d/shellinabox.conf"	# Supprime le fichier de conf nginx de shellinabox pour empêcher d'y accéder.

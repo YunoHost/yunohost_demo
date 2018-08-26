@@ -73,7 +73,7 @@ CLONE_CONTAINER () {
 	sudo rm -f /var/lib/lxcsnaps/$MACHINE_CIBLE/snap0.tar.gz
 	sudo lxc-destroy -n $MACHINE_CIBLE -f
 
-	echo "\e[1m> Clone le conteneur $MACHINE_SOURCE sur $MACHINE_CIBLE\e[0m"
+	echo -e "\e[1m> Clone le conteneur $MACHINE_SOURCE sur $MACHINE_CIBLE\e[0m"
 	sudo sudo lxc-clone -o $MACHINE_SOURCE -n $MACHINE_CIBLE
 
 	echo "Modification de l'ip du clone,"

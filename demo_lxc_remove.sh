@@ -46,4 +46,4 @@ sudo rm -r ~/.local/share/letsencrypt
 sudo rm -r ~/letsencrypt
 sudo rm -r /var/lib/letsencrypt
 # Supprime la tache cron
-sudo rm /etc/cron.weekly/certificateRenewer
+sudo rm /etc/cron.weekly/Certificate_Renewer

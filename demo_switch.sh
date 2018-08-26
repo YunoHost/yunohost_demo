@@ -36,7 +36,8 @@ sleep 10	# Attend 10 seconde pour s'assurer du démarrage de la machine.
 if [ "$(sudo lxc-info --name $LXC_B | grep -c "STOPPED")" -eq "1" ]
 then
 	# Le conteneur n'a pas réussi à démarrer. On averti un responsable par mail...
-	echo -e "Échec du démarrage du conteneur $LXC_B sur le serveur de demo $DOMAIN! \n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_switch.log")" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
+	echo -e "Échec du démarrage du conteneur $LXC_B sur le serveur de demo $DOMAIN! \n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_switch.log")\n\nLe script 'demo_restore_crash.sh' va être exécuté pour tenter de fixer l'erreur." | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
+	$script_dir/demo_restore_crash.sh &
 	exit 1
 else
 	# Bascule sur le conteneur B avec le load balancing de nginx...

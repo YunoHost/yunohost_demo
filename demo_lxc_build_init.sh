@@ -15,7 +15,7 @@ IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
 MAIL_ADDR=$(cat "$script_dir/demo_lxc_build.sh" | grep MAIL_ADDR= | cut -d '=' -f2)
 
 # Check user
-echo $USER > "$script_dir/setup_user"
+echo $(whoami) > "$script_dir/setup_user"
 
 read -p "Indiquer le nom de domaine du serveur de demo: " DOMAIN
 echo "$DOMAIN" > "$script_dir/domain.ini"
@@ -50,7 +50,7 @@ if [ -e $HOME/.ssh/$LXC_NAME1 ]; then
 	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC1
 	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC2
 fi
-ssh-keygen -t dsa -f $HOME/.ssh/$LXC_NAME1 -P '' >> "$LOG_BUILD_LXC" 2>&1
+ssh-keygen -t rsa -f $HOME/.ssh/$LXC_NAME1 -P '' >> "$LOG_BUILD_LXC" 2>&1
 
 echo | tee -a $HOME/.ssh/config <<EOF >> "$LOG_BUILD_LXC" 2>&1
 # ssh $LXC_NAME1
@@ -170,9 +170,20 @@ sudo service nginx reload
 wget https://raw.githubusercontent.com/YunoHost-Apps/letsencrypt_ynh/master/sources/certificateRenewer
 sed -i "s/DOMAIN_NAME/$DOMAIN/" certificateRenewer
 sed -i "s/ADMIN_EMAIL/$MAIL_ADDR/" certificateRenewer
-sudo mv certificateRenewer /etc/cron.weekly/
+
+# And add a script to renew
+echo "#!/bin/bash
+
+sudo sed -i 's@rewrite ^ https://$server_name$request_uri? permanent;@#rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/demo.yunohost.org.conf
+sudo service nginx reload
+
+sudo /etc/cron.weekly/certificateRenewer
+
+sudo sed -i 's@#rewrite ^ https://$server_name$request_uri? permanent;@rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/demo.yunohost.org.conf
+sudo service nginx reload" | tee /etc/cron.weekly/Certificate_Renewer
 
 echo -e "\e[1mLe serveur est prêt à déployer les conteneurs de demo.\e[0m"
 echo -e "\e[1mExécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo.\e[0m"
+
 # Déploie les conteneurs de demo
 # "$script_dir/demo_lxc_build.sh"
