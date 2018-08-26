@@ -55,10 +55,10 @@ fi
 
 sudo mkdir -p /var/lib/lxcsnaps	# Créer le dossier lxcsnaps, pour s'assurer que lxc utilisera ce dossier, même avec lxc 2.
 
-if sudo lxc-info -n $LXC_NAME > /dev/null 2>&1
+if sudo lxc-info -n $LXC_NAME1 > /dev/null 2>&1
 then	# Si le conteneur existe déjà
 	echo -e "\e[1m> Suppression du conteneur existant.\e[0m" | tee -a "$LOG_BUILD_LXC"
-	"$script_dir/demo_lxc_remove.sh" quiet | tee -a "$LOG_BUILD_LXC"
+	"$script_dir/demo_lxc_destroy.sh" quiet | tee -a "$LOG_BUILD_LXC"
 fi
 
 echo -e "\e[1m> Création d'une machine debian stretch minimaliste\e[0m" | tee -a "$LOG_BUILD_LXC"
@@ -158,7 +158,7 @@ echo -e "\e[36mInstallation de dokuwiki\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Etherpad
 echo -e "\e[36mInstallation de etherpad\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads -a \"domain=$DOMAIN&path=/etherpad&admin=administration&password=$PASSWORD_DEMO&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads -a \"domain=$DOMAIN&path=/etherpad&admin=$USER_DEMO&password=administration&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
 # Hextris
 echo -e "\e[36mInstallation de hextris\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install hextris -a \"domain=$DOMAIN&path=/hextris&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
