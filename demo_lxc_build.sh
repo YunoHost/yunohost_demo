@@ -18,7 +18,7 @@ LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
  # En minutes
 MAIL_ADDR=demo@yunohost.org
-dns_force=0
+dnsforce=0
 main_iface=
 dns=
 
@@ -158,7 +158,7 @@ echo -e "\e[36mInstallation de dokuwiki\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Etherpad
 echo -e "\e[36mInstallation de etherpad\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads -a \"domain=$DOMAIN&path=/etherpad&admin=$USER_DEMO&password=$PASSWORD_DEMO&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads -a \"domain=$DOMAIN&path=/etherpad&admin=administration&password=$PASSWORD_DEMO&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
 # Hextris
 echo -e "\e[36mInstallation de hextris\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install hextris -a \"domain=$DOMAIN&path=/hextris&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
@@ -182,7 +182,7 @@ echo -e "\e[36mInstallation de piwigo\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo -a \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Rainloop
 echo -e "\e[36mInstallation de rainloop\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=0&password=$PASSWORD_DEMO&ldap=Yes&lang=English\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&lang=English\"" | tee -a "$LOG_BUILD_LXC"
 # Roundcube
 echo -e "\e[36mInstallation de roundcube\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0\"" | tee -a "$LOG_BUILD_LXC"
@@ -209,7 +209,7 @@ echo -e "\e[36mInstallation de wallabag\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 -a \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
 # Wordpress
 echo -e "\e[36mInstallation de wordpress\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress -a \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_EN&multisite=0&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress -a \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_US&multisite=0&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Zerobin
 echo -e "\e[36mInstallation de zerobin\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install zerobin -a \"domain=$DOMAIN&path=/zerobin&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
