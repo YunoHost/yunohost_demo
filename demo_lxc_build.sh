@@ -249,7 +249,7 @@ sudo lxc-snapshot -n $LXC_NAME1 >> "$LOG_BUILD_LXC" 2>&1
 # Il sera nommé snap0 et stocké dans /var/lib/lxcsnaps/$LXC_NAME1/snap0/
 
 echo -e "\e[1m> Clone la machine\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo sudo lxc-clone -o $LXC_NAME1 -n $LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-copy --name=$LXC_NAME1 --newname=$LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Modification de l'ip du clone\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s@address $IP_LXC1@address $IP_LXC2@" /var/lib/lxc/$LXC_NAME2/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1

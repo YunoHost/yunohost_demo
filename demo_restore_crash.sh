@@ -74,7 +74,7 @@ CLONE_CONTAINER () {
 	sudo lxc-destroy -n $MACHINE_CIBLE -f
 
 	echo -e "\e[1m> Clone le conteneur $MACHINE_SOURCE sur $MACHINE_CIBLE\e[0m"
-	sudo sudo lxc-clone -o $MACHINE_SOURCE -n $MACHINE_CIBLE
+	sudo lxc-copy --name=$MACHINE_SOURCE --newname=$MACHINE_CIBLE
 
 	echo "Modification de l'ip du clone,"
 	sudo sed -i "s@address $IP_SOURCE@address $IP_CIBLE@" /var/lib/lxc/$MACHINE_CIBLE/rootfs/etc/network/interfaces
@@ -185,3 +185,5 @@ fi
 
 echo "Réactive le cron switch."
 sudo sed -i "s/#*\*/\*/" /etc/cron.d/demo_switch	# Le cron est décommenté
+echo "Restart la demo."
+./demo_start.sh
