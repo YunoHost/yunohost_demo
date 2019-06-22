@@ -174,12 +174,12 @@ sed -i "s/ADMIN_EMAIL/$MAIL_ADDR/" certificateRenewer
 # And add a script to renew
 echo "#!/bin/bash
 
-sudo sed -i 's@rewrite ^ https://$server_name$request_uri? permanent;@#rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/demo.yunohost.org.conf
+sudo sed -i 's@rewrite ^ https://$server_name$request_uri? permanent;@#rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/$server_name.conf
 sudo service nginx reload
 
 sudo /etc/cron.weekly/certificateRenewer
 
-sudo sed -i 's@#rewrite ^ https://$server_name$request_uri? permanent;@rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/demo.yunohost.org.conf
+sudo sed -i 's@#rewrite ^ https://$server_name$request_uri? permanent;@rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/$server_name.conf
 sudo service nginx reload" | tee /etc/cron.weekly/Certificate_Renewer
 
 echo -e "\e[1mLe serveur est prêt à déployer les conteneurs de demo.\e[0m"
