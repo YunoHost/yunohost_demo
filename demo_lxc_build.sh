@@ -23,7 +23,7 @@ main_iface=
 dns=
 
 USER_DEMO=demo
-PASSWORD_DEMO=demo
+PASSWORD_DEMO=demo1234
 
 # Tente de définir l'interface réseau principale
 if [ -z $main_iface ]	# Si main_iface est vide, tente de le trouver.
