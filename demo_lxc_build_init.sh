@@ -155,7 +155,7 @@ EOF
 
 mkdir -p /tmp/letsencrypt-auto
 # Créer le certificat
-sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN
+sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN --no-eff-email
 
 # Route l'upstream sur le port 443. Le port 80 servait uniquement à let's encrypt
 # sudo sed -i "s/server $IP_LXC1:80 ;/server $IP_LXC1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
