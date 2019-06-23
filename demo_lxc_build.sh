@@ -114,7 +114,7 @@ sudo mkdir /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh >> "$LOG_BUILD_LXC"
 sudo cp $HOME/.ssh/$LXC_NAME1.pub /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh/authorized_keys >> "$LOG_BUILD_LXC" 2>&1
 sudo lxc-attach -n $LXC_NAME1 -- chown ssh_demo -R /home/ssh_demo/.ssh >> "$LOG_BUILD_LXC" 2>&1
 
-ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une première connexion SSH pour valider la clé.
+ssh -o StrictHostKeyChecking=no $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une première connexion SSH pour valider la clé.
 if [ "$?" -ne 0 ]; then	# Si l'utilisateur tarde trop, la connexion sera refusée... ???
 	ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une premier connexion SSH pour valider la clé.
 fi
