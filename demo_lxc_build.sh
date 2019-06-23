@@ -155,7 +155,7 @@ echo -e "\e[36mInstallation d'agendav\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav -a \"domain=$DOMAIN&path=/agendav&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Dokuwiki
 echo -e "\e[36mInstallation de dokuwiki\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Etherpad
 echo -e "\e[36mInstallation de etherpad\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads -a \"domain=$DOMAIN&path=/etherpad&admin=$USER_DEMO&password=administration&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
