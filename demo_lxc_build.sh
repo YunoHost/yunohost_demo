@@ -70,7 +70,7 @@ echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Configuration réseau du conteneur\e[0m" | tee -a "$LOG_BUILD_LXC"
-if [ $new_lxc ]; then
+if [ $new_lxc -eq 1 ]; then
 	sudo sed -i "s/^lxc.net.0.type = empty$/lxc.net.0.type = veth\nlxc.net.0.flags  = up\nlxc.net.0.link = lxc_demo\nlxc.net.0.name = eth0\nlxc.net.0.veth.pair = $LXC_NAME1\nlxc.net.0.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
 else
 	sudo sed -i "s/^lxc.network.type = empty$/lxc.network.type = veth\nlxc.network.flags = up\nlxc.network.link = lxc_demo\nlxc.network.name = eth0\nlxc.network.veth.pair = $LXC_NAME1\nlxc.network.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
@@ -93,7 +93,7 @@ if [ $dnsforce -eq 1 ]; then	# Force la réécriture du resolv.conf
 fi
 
 # Fix an issue with apparmor when the container start.
-if [ $new_lxc ]; then
+if [ $new_lxc -eq 1 ]; then
 	sudo sed -i "s/^lxc.apparmor.profile = generated$/lxc.apparmor.profile = unconfined/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
 else
 	echo -e "\n# Fix apparmor issues\nlxc.aa_profile = unconfined" | sudo tee -a /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
