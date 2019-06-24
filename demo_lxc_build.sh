@@ -22,7 +22,9 @@ dnsforce=0
 main_iface=
 dns=
 
-new_lxc=${dpkg --compare-versions ${lxc-info --version} gt "3.0.0"}
+lxc_current_version=$(lxc-info --version)
+
+if $(dpkg --compare-versions "$lxc_current_version" "gt" "3.0.0"); then new_lxc=1; else new_lxc=0; fi
 
 USER_DEMO=demo
 PASSWORD_DEMO=demo1234
