@@ -155,7 +155,7 @@ EOF
 
 mkdir -p /tmp/letsencrypt-auto
 # Créer le certificat
-sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN
+sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN --no-eff-email
 
 # Route l'upstream sur le port 443. Le port 80 servait uniquement à let's encrypt
 # sudo sed -i "s/server $IP_LXC1:80 ;/server $IP_LXC1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
@@ -174,12 +174,12 @@ sed -i "s/ADMIN_EMAIL/$MAIL_ADDR/" certificateRenewer
 # And add a script to renew
 echo "#!/bin/bash
 
-sudo sed -i 's@rewrite ^ https://$server_name$request_uri? permanent;@#rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/demo.yunohost.org.conf
+sudo sed -i 's@rewrite ^ https://$server_name$request_uri? permanent;@#rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
 
 sudo /etc/cron.weekly/certificateRenewer
 
-sudo sed -i 's@#rewrite ^ https://$server_name$request_uri? permanent;@rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/demo.yunohost.org.conf
+sudo sed -i 's@#rewrite ^ https://$server_name$request_uri? permanent;@rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload" | tee /etc/cron.weekly/Certificate_Renewer
 
 echo -e "\e[1mLe serveur est prêt à déployer les conteneurs de demo.\e[0m"

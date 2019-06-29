@@ -12,7 +12,7 @@ IP_LXC1=10.1.5.3
 IP_LXC2=10.1.5.4
 ARG_SSH=-t
 DOMAIN=$(cat "$script_dir/domain.ini")
-YUNO_PWD=demo
+YUNO_PWD=demo1234
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
@@ -22,8 +22,12 @@ dnsforce=0
 main_iface=
 dns=
 
+lxc_current_version=$(lxc-info --version)
+
+if $(dpkg --compare-versions "$lxc_current_version" "gt" "3.0.0"); then new_lxc=1; else new_lxc=0; fi
+
 USER_DEMO=demo
-PASSWORD_DEMO=demo
+PASSWORD_DEMO=demo1234
 
 # Tente de définir l'interface réseau principale
 if [ -z $main_iface ]	# Si main_iface est vide, tente de le trouver.
@@ -68,7 +72,11 @@ echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Configuration réseau du conteneur\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo sed -i "s/^lxc.network.type = empty$/lxc.network.type = veth\nlxc.network.flags = up\nlxc.network.link = lxc_demo\nlxc.network.name = eth0\nlxc.network.veth.pair = $LXC_NAME1\nlxc.network.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+if [ $new_lxc -eq 1 ]; then
+	sudo sed -i "s/^lxc.net.0.type = empty$/lxc.net.0.type = veth\nlxc.net.0.flags  = up\nlxc.net.0.link = lxc_demo\nlxc.net.0.name = eth0\nlxc.net.0.veth.pair = $LXC_NAME1\nlxc.net.0.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+else
+	sudo sed -i "s/^lxc.network.type = empty$/lxc.network.type = veth\nlxc.network.flags = up\nlxc.network.link = lxc_demo\nlxc.network.name = eth0\nlxc.network.veth.pair = $LXC_NAME1\nlxc.network.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+fi
 
 echo -e "\e[1m> Configuration réseau de la machine virtualisée\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s@iface eth0 inet dhcp@iface eth0 inet static\n\taddress $IP_LXC1/24\n\tgateway $PLAGE_IP.1@" /var/lib/lxc/$LXC_NAME1/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1
@@ -87,7 +95,11 @@ if [ $dnsforce -eq 1 ]; then	# Force la réécriture du resolv.conf
 fi
 
 # Fix an issue with apparmor when the container start.
-echo -e "\n# Fix apparmor issues\nlxc.aa_profile = unconfined" | sudo tee -a /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+if [ $new_lxc -eq 1 ]; then
+	sudo sed -i "s/^lxc.apparmor.profile = generated$/lxc.apparmor.profile = unconfined/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+else
+	echo -e "\n# Fix apparmor issues\nlxc.aa_profile = unconfined" | sudo tee -a /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+fi
 
 echo -e "\e[1m> Démarrage de la machine\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-start -n $LXC_NAME1 -d --logfile "$script_dir/lxc_boot.log" >> "$LOG_BUILD_LXC" 2>&1
@@ -114,7 +126,7 @@ sudo mkdir /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh >> "$LOG_BUILD_LXC"
 sudo cp $HOME/.ssh/$LXC_NAME1.pub /var/lib/lxc/$LXC_NAME1/rootfs/home/ssh_demo/.ssh/authorized_keys >> "$LOG_BUILD_LXC" 2>&1
 sudo lxc-attach -n $LXC_NAME1 -- chown ssh_demo -R /home/ssh_demo/.ssh >> "$LOG_BUILD_LXC" 2>&1
 
-ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une première connexion SSH pour valider la clé.
+ssh -o StrictHostKeyChecking=no $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une première connexion SSH pour valider la clé.
 if [ "$?" -ne 0 ]; then	# Si l'utilisateur tarde trop, la connexion sera refusée... ???
 	ssh $ARG_SSH $LXC_NAME1 "exit 0"	# Initie une premier connexion SSH pour valider la clé.
 fi
@@ -146,7 +158,7 @@ echo -e "\e[1m>> Modification de Yunohost pour la demo\e[0m" | tee -a "$LOG_BUIL
 echo -e "\e[1m> Installation des applications officielles\e[0m" | tee -a "$LOG_BUILD_LXC"
 # Ampache
 echo -e "\e[36mInstallation de Ampache\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ampache -a \"domain=$DOMAIN&path=/ampache&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ampache -a \"domain=$DOMAIN&path=/ampache&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Baikal
 echo -e "\e[36mInstallation de baikal\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install baikal -a \"domain=$DOMAIN&path=/baikal&password=$PASSWORD_DEMO\"" | tee -a "$LOG_BUILD_LXC"
@@ -155,7 +167,7 @@ echo -e "\e[36mInstallation d'agendav\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav -a \"domain=$DOMAIN&path=/agendav&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Dokuwiki
 echo -e "\e[36mInstallation de dokuwiki\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki -a \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Etherpad
 echo -e "\e[36mInstallation de etherpad\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads -a \"domain=$DOMAIN&path=/etherpad&admin=$USER_DEMO&password=administration&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
@@ -220,12 +232,12 @@ ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app setting shellinabox path -d && sudo y
 
 # Indique le couple login/mot de passe demo/demo
 # Et ajoute demo/demo par défaut dans les champs d'identification
-sed -i "3i\<center>Login: demo / Password: demo</center>" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html # Sur le login du portail
-sed -i "s/id=\"user\" type=\"text\" name=\"user\"/id=\"user\" type=\"text\" name=\"user\" value=\"demo\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html
-sed -i "s/id=\"password\" type=\"password\" name=\"password\"/id=\"password\" type=\"password\" name=\"password\" value=\"demo\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html
+sed -i "3i\<center>Login: $USER_DEMO / Password: $PASSWORD_DEMO</center>" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html # Sur le login du portail
+sed -i "s/id=\"user\" type=\"text\" name=\"user\"/id=\"user\" type=\"text\" name=\"user\" value=\"$USER_DEMO\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html
+sed -i "s/id=\"password\" type=\"password\" name=\"password\"/id=\"password\" type=\"password\" name=\"password\" value=\"$PASSWORD_DEMO\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html
 
-sed -i "17i\&emsp;&emsp;&emsp;Password: demo" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms    # Et sur le login admin
-sed -i "s/type=\"password\" id=\"password\" name=\"password\"/type=\"password\" id=\"password\" name=\"password\" value=\"demo\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms
+sed -i "17i\&emsp;&emsp;&emsp;Password: $YUNO_PWD" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms    # Et sur le login admin
+sed -i "s/type=\"password\" id=\"password\" name=\"password\"/type=\"password\" id=\"password\" name=\"password\" value=\"$YUNO_PWD\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms
 
 # Désactive l'installation d'app custom
 sed -i "s/<input type=\"submit\" class=\"btn btn-success slide\" value=\"{{t 'install'}}\">/<input type=\"\" class=\"btn btn-success slide\" value=\"{{t 'install'}}\">/g" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/app/app_list_install.ms

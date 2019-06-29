@@ -1,5 +1,9 @@
 # Scripts de gestion et mise en place des serveurs de demo Yunohost sous LXC
 
+## Prérequis
+* `apt install sudo git nginx -y`
+* register a dns name to your demo server and make you demo server available from internet for TCP/80 and TCP/443
+
 ## demo_lxc_build_init
 Ce script prépare le serveur hôte à recevoir les conteneurs LXC de demo.  
 Il doit être exécuté une seule fois et en premier.
