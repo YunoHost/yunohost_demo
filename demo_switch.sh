@@ -30,6 +30,9 @@ else	# Sinon, on suppose que c'est la machine 2 qui est en cours.
 	# Si aucune machine ne tourne, la première démarrera.
 fi
 
+# Supprime les éventuels swap présents.
+/sbin/swapoff /var/lib/lxc/$LXC_A/rootfs/swap_*
+
 # Démarre le conteneur B et arrête le conteneur A.
 sudo lxc-start -n $LXC_B -o "$script_dir/demo_switch.log" -d > /dev/null	# Démarre l'autre machine
 sleep 10	# Attend 10 seconde pour s'assurer du démarrage de la machine.

@@ -35,6 +35,9 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 
 	sudo touch /var/lib/lxc/$MACHINE.lock_fileU	# Met en place un fichier pour indiquer que la machine est indisponible pendant l'upgrade
 
+	# Supprime les éventuels swap présents.
+	/sbin/swapoff /var/lib/lxc/$MACHINE/rootfs/swap_*
+
 	# Restaure le snapshot
 	sudo lxc-snapshot -r snap0 -n $MACHINE
 
