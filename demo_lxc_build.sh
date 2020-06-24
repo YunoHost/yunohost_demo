@@ -240,10 +240,10 @@ sed -i "17i\&emsp;&emsp;&emsp;Password: $YUNO_PWD" /var/lib/lxc/yunohost_demo1/r
 sed -i "s/type=\"password\" id=\"password\" name=\"password\"/type=\"password\" id=\"password\" name=\"password\" value=\"$YUNO_PWD\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms
 
 # Désactive l'installation d'app custom
-sed -i "s/<input type=\"submit\" class=\"btn btn-success slide\" value=\"{{t 'install'}}\">/<input type=\"\" class=\"btn btn-success slide\" value=\"{{t 'install'}}\">/g" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/app/app_list_install.ms
+sed -i "s/<a role=\"button\" class=\"btn btn-success slide\">{{t 'install'}}</a>/<a role=\"\" class=\"btn btn-success slide\">{{t 'install'}}</a>/g" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/app/app_catalog_category.ms
 
 # Désactive l'ajout de domaine, pour éviter surtout les nohost
-sed -i "s/<input type=\"submit\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/<input type=\"\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/g" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/domain/domain_add.ms
+sed -i "s/<input type=\"submit\" role=\"button\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/<input type=\"\" role=\"\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/g" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/domain/domain_add.ms
 
 # ********
 
