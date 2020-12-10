@@ -197,10 +197,10 @@ echo -e "\e[36mInstallation de piwigo\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo -a \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Rainloop
 echo -e "\e[36mInstallation de rainloop\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&lang=English\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&lang=en\"" | tee -a "$LOG_BUILD_LXC"
 # Roundcube
 echo -e "\e[36mInstallation de roundcube\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0&language=en_GB\"" | tee -a "$LOG_BUILD_LXC"
 # Searx
 echo -e "\e[36mInstallation de searx\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx -a \"domain=$DOMAIN&path=/searx&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
@@ -210,9 +210,6 @@ ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install shellinabox -a \"domain=$DOMA
 # Strut
 echo -e "\e[36mInstallation de strut\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut -a \"domain=$DOMAIN&path=/strut&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
-# Synapse
-echo -e "\e[36mInstallation de synapse\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install synapse -a \"domain=$DOMAIN&is_public=0\"" | tee -a "$LOG_BUILD_LXC"
 # Transmission
 echo -e "\e[36mInstallation de transmission\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission -a \"domain=$DOMAIN&path=/torrent\"" | tee -a "$LOG_BUILD_LXC"
