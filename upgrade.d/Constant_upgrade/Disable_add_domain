@@ -6,4 +6,4 @@ if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$P
 MACHINE=$1      # Nom du conteneur
 
 # Disable the button to add a new domain
-sed -i "s/<input type=\"submit\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/<input type=\"\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">/g" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/domain/domain_add.ms
+sed -i "s@<input type=\"submit\" role=\"button\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">@<input type=\"\" role=\"\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">@g" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/domain/domain_add.ms
