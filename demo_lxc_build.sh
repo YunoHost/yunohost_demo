@@ -65,8 +65,8 @@ then	# Si le conteneur existe déjà
 	"$script_dir/demo_lxc_destroy.sh" quiet | tee -a "$LOG_BUILD_LXC"
 fi
 
-echo -e "\e[1m> Création d'une machine debian stretch minimaliste\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo lxc-create -n $LXC_NAME1 -t debian -- -r stretch >> "$LOG_BUILD_LXC" 2>&1
+echo -e "\e[1m> Création d'une machine debian buster minimaliste\e[0m" | tee -a "$LOG_BUILD_LXC"
+sudo lxc-create -n $LXC_NAME1 -t debian -- -r buster >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
