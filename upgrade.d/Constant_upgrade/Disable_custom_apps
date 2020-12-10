@@ -6,4 +6,4 @@ if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$P
 MACHINE=$1      # Nom du conteneur
 
 # Disable the button to install a custom app
-sed -i "s/<input type=\"submit\" class=\"btn btn-success slide\" value=\"{{t 'install'}}\">/<input type=\"\" class=\"btn btn-success slide\" value=\"{{t 'install'}}\">/g" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/app/app_list_install.ms
+sed -i "s@<a role=\"button\" class=\"btn btn-success slide\">{{t 'install'}}</a>@<a role=\"\" class=\"btn btn-success slide\">{{t 'install'}}</a>@g" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/app/app_catalog_category.ms
