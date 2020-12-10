@@ -12,7 +12,7 @@ IP_LXC1=10.1.5.3
 IP_LXC2=10.1.5.4
 ARG_SSH=-t
 DOMAIN=$(cat "$script_dir/domain.ini")
-YUNO_PWD=demo1234
+YUNO_PWD=demo
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
@@ -27,7 +27,7 @@ lxc_current_version=$(lxc-info --version)
 if $(dpkg --compare-versions "$lxc_current_version" "gt" "3.0.0"); then new_lxc=1; else new_lxc=0; fi
 
 USER_DEMO=demo
-PASSWORD_DEMO=demo1234
+PASSWORD_DEMO=demo
 
 # Tente de définir l'interface réseau principale
 if [ -z $main_iface ]	# Si main_iface est vide, tente de le trouver.
@@ -142,7 +142,10 @@ ssh $ARG_SSH $LXC_NAME1 "git clone https://github.com/YunoHost/install_script /t
 echo -e "\e[1m> Installation de Yunohost...\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "cd /tmp/install_script; sudo ./install_yunohost -a" | tee -a "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Post install Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD" | tee -a "$LOG_BUILD_LXC" 2>&1
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD --force-password" | tee -a "$LOG_BUILD_LXC" 2>&1
+
+echo -e "\e[1m> Disable password strength\e[0m" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost settings set security.password.user.strength -v -1" | tee -a "$LOG_BUILD_LXC"
 
 USER_DEMO_CLEAN=${USER_DEMO//"_"/""}
 echo -e "\e[1m> Ajout de l'utilisateur de demo\e[0m" | tee -a "$LOG_BUILD_LXC"
