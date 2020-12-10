@@ -82,6 +82,8 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
             sudo lxc-attach -n $MACHINE -- apt-get autoremove -y
             sudo lxc-attach -n $MACHINE -- apt-get autoclean
 	fi
+	sudo lxc-attach -n $MACHINE -- yunohost tools update
+	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade --system
 
 	# Exécution des scripts de upgrade.d
 	LOOP=$((LOOP + 1))
@@ -124,10 +126,10 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	done <<< "$(ls -1 "$script_dir/upgrade.d/Constant_upgrade")"
 
 	# Upgrade des apps
-	sudo lxc-attach -n $MACHINE -- yunohost app fetchlist
-	sudo lxc-attach -n $MACHINE -- service nginx restart
-	sudo lxc-attach -n $MACHINE -- yunohost app upgrade
-	sudo lxc-attach -n $MACHINE -- service nginx restart
+	sudo lxc-attach -n $MACHINE -- yunohost tools update
+	sudo lxc-attach -n $MACHINE -- systemctl restart nginx
+	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade --apps
+	sudo lxc-attach -n $MACHINE -- systemctl restart nginx
 
 	# Arrêt de la machine virtualisée
 	sudo lxc-stop -n $MACHINE
