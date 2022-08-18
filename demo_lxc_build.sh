@@ -140,16 +140,20 @@ sudo lxc-attach -n $LXC_NAME -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG
 
 ssh $ARG_SSH $LXC_NAME1 "git clone https://github.com/YunoHost/install_script /tmp/install_script" >> "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Installation de Yunohost...\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "cd /tmp/install_script; sudo ./install_yunohost -a" | tee -a "$LOG_BUILD_LXC" 2>&1
+ssh $ARG_SSH $LXC_NAME1 "cd /tmp/install_script; sudo ./buster -a" | tee -a "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Post install Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD --force-password" | tee -a "$LOG_BUILD_LXC" 2>&1
+
+echo -e "\e[1m> Fix SSH access\e[0m" | tee -a "$LOG_BUILD_LXC"
+sudo lxc-attach -n $LXC_NAME1 -- sed -i "s/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root ssh_demo/" /etc/ssh/sshd_config >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- service sshd restart >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Disable password strength\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost settings set security.password.user.strength -v -1" | tee -a "$LOG_BUILD_LXC"
 
 USER_DEMO_CLEAN=${USER_DEMO//"_"/""}
 echo -e "\e[1m> Ajout de l'utilisateur de demo\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create --firstname \"$USER_DEMO_CLEAN\" --mail \"$USER_DEMO_CLEAN@$DOMAIN\" --lastname \"$USER_DEMO_CLEAN\" --password \"$PASSWORD_DEMO\" \"$USER_DEMO\" --admin-password=\"$YUNO_PWD\""
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create \"$USER_DEMO\" --firstname \"$USER_DEMO_CLEAN\" --lastname \"$USER_DEMO_CLEAN\" --domain \"$DOMAIN\" --password \"$PASSWORD_DEMO\""
 
 echo -e "\e[1m\n> Vérification de l'état de Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost -v" | tee -a "$LOG_BUILD_LXC" 2>&1
@@ -185,7 +189,7 @@ echo -e "\e[36mInstallation de kanboard\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard -a \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Nextcloud
 echo -e "\e[36mInstallation de nextcloud\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud -a \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud -a \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Opensondage
 echo -e "\e[36mInstallation de opensondage\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage -a \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
@@ -197,7 +201,7 @@ echo -e "\e[36mInstallation de piwigo\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo -a \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Rainloop
 echo -e "\e[36mInstallation de rainloop\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&lang=en\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Roundcube
 echo -e "\e[36mInstallation de roundcube\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0&language=en_GB\"" | tee -a "$LOG_BUILD_LXC"
@@ -215,7 +219,7 @@ echo -e "\e[36mInstallation de transmission\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission -a \"domain=$DOMAIN&path=/torrent\"" | tee -a "$LOG_BUILD_LXC"
 # Ttrss
 echo -e "\e[36mInstallation de ttrss\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss -a \"domain=$DOMAIN&path=/ttrss\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss -a \"domain=$DOMAIN&path=/ttrss&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Wallabag
 echo -e "\e[36mInstallation de wallabag\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 -a \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
