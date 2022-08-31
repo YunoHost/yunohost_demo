@@ -16,7 +16,7 @@ YUNO_PWD=demo
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
-DIST="buster"
+DIST="bullseye"
  # En minutes
 MAIL_ADDR=demo@yunohost.org
 dnsforce=0
@@ -142,6 +142,7 @@ sudo lxc-attach -n $LXC_NAME -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG
 echo -e "\e[1m> Installation de Yunohost...\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo /bin/bash -c \"curl https://install.yunohost.org/$DIST | bash -s -- -a -d stable\"" | tee -a "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Post install Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo systemctl start dbus.service" | tee -a "$LOG_BUILD_LXC" 2>&1
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD --force-password" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Fix SSH access\e[0m" | tee -a "$LOG_BUILD_LXC"
