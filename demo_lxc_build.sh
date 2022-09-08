@@ -298,6 +298,7 @@ After=network.target
 [Service]
 Type=forking
 ExecStart=$script_dir/demo_start.sh
+RemainAfterExit=true
 ExecStop=$script_dir/demo_stop.sh
 ExecReload=$script_dir/demo_start.sh
 
