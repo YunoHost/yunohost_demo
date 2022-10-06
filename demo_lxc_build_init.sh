@@ -25,7 +25,7 @@ sudo mkdir -p $(dirname $LOG_BUILD_LXC)
 
 echo -e "\e[1m> Update et install lxc, lxctl et mailutils\e[0m" | tee "$LOG_BUILD_LXC"
 sudo apt-get update >> "$LOG_BUILD_LXC" 2>&1
-sudo apt-get install -y lxc lxctl mailutils >> "$LOG_BUILD_LXC" 2>&1
+sudo apt-get install -y lxc lxctl mailutils certbot >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Autoriser l'ip forwarding, pour router vers la machine virtuelle.\e[0m" | tee -a "$LOG_BUILD_LXC"
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/lxc_demo.conf >> "$LOG_BUILD_LXC" 2>&1
@@ -117,14 +117,8 @@ EOF
 
 sudo service nginx reload
 
-echo -e "\e[1m> Installation de let's encrypt et création du certificat SSL.\e[0m" | tee -a "$LOG_BUILD_LXC"
-cd ~
-# Télécharge let's encrypt
-git clone https://github.com/letsencrypt/letsencrypt
-cd letsencrypt/
-# Installe les dépendances de let's encrypt
-sudo ./letsencrypt-auto --help
-sudo mkdir /etc/letsencrypt
+echo -e "\e[1m> Création du certificat SSL.\e[0m" | tee -a "$LOG_BUILD_LXC"
+sudo mkdir -p /etc/letsencrypt
 
 # Créer le fichier de config
 echo | sudo tee /etc/letsencrypt/conf.ini <<EOF >> "$LOG_BUILD_LXC" 2>&1
@@ -132,30 +126,31 @@ echo | sudo tee /etc/letsencrypt/conf.ini <<EOF >> "$LOG_BUILD_LXC" 2>&1
 #  Let's encrypt configuration  #
 #################################
 
-# Taille de la clef
+# Use a 4096 bit RSA key instead of 2048
 rsa-key-size = 4096
 
-# Email de notification / contact si necessaire dans le futur
+# Uncomment and update to register with the specified e-mail address
 email = $MAIL_ADDR
 
-# Utiliser l'interface texte
-text = True
-# Accepter les Conditions d'Utilisation du service
-agree-tos = True
-
-# Utiliser la methode d'authentification webroot
+# Uncomment to use the webroot authenticator. Replace webroot-path with the
+# path to the public_html / webroot folder being served by your web server.
 # avec le contenu dans /tmp/letsencrypt-auto
 authenticator = webroot
 webroot-path = /tmp/letsencrypt-auto
 
+# Utiliser l'interface texte
+text = True
+# Uncomment to automatically agree to the terms of service of the ACME server
+agree-tos = true
+
 # (Serveur de test uniquement : si vous l'utilisez,
 # votre certificat ne sera pas vraiment valide)
-# server = https://acme-staging.api.letsencrypt.org/directory
+# server = https://acme-staging-v02.api.letsencrypt.org/directory
 EOF
 
 mkdir -p /tmp/letsencrypt-auto
 # Créer le certificat
-sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN --no-eff-email
+sudo certbot certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN --no-eff-email
 
 # Route l'upstream sur le port 443. Le port 80 servait uniquement à let's encrypt
 # sudo sed -i "s/server $IP_LXC1:80 ;/server $IP_LXC1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
@@ -165,22 +160,6 @@ sudo ./letsencrypt-auto certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN -
 
 sudo sed -i "s/^#//g" /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
-
-# Mise en place du cron de renouvellement.
-wget https://raw.githubusercontent.com/YunoHost-Apps/letsencrypt_ynh/master/sources/certificateRenewer
-sed -i "s/DOMAIN_NAME/$DOMAIN/" certificateRenewer
-sed -i "s/ADMIN_EMAIL/$MAIL_ADDR/" certificateRenewer
-
-# And add a script to renew
-echo "#!/bin/bash
-
-sudo sed -i 's@rewrite ^ https://$server_name$request_uri? permanent;@#rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/$DOMAIN.conf
-sudo service nginx reload
-
-sudo /etc/cron.weekly/certificateRenewer
-
-sudo sed -i 's@#rewrite ^ https://$server_name$request_uri? permanent;@rewrite ^ https:$//$server_name$request_uri? permanent;@' /etc/nginx/conf.d/$DOMAIN.conf
-sudo service nginx reload" | tee /etc/cron.weekly/Certificate_Renewer
 
 echo -e "\e[1mLe serveur est prêt à déployer les conteneurs de demo.\e[0m"
 echo -e "\e[1mExécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo.\e[0m"
