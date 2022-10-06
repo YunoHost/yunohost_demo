@@ -16,6 +16,7 @@ YUNO_PWD=demo
 LXC_NAME1=yunohost_demo1
 LXC_NAME2=yunohost_demo2
 TIME_TO_SWITCH=30
+DIST="buster"
  # En minutes
 MAIL_ADDR=demo@yunohost.org
 dnsforce=0
@@ -65,15 +66,15 @@ then	# Si le conteneur existe déjà
 	"$script_dir/demo_lxc_destroy.sh" quiet | tee -a "$LOG_BUILD_LXC"
 fi
 
-echo -e "\e[1m> Création d'une machine debian buster minimaliste\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo lxc-create -n $LXC_NAME1 -t debian -- -r buster >> "$LOG_BUILD_LXC" 2>&1
+echo -e "\e[1m> Création d'une machine debian $DIST minimaliste\e[0m" | tee -a "$LOG_BUILD_LXC"
+sudo lxc-create -n $LXC_NAME1 -t debian -- -r $DIST >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Configuration réseau du conteneur\e[0m" | tee -a "$LOG_BUILD_LXC"
 if [ $new_lxc -eq 1 ]; then
-	sudo sed -i "s/^lxc.net.0.type = empty$/lxc.net.0.type = veth\nlxc.net.0.flags  = up\nlxc.net.0.link = lxc_demo\nlxc.net.0.name = eth0\nlxc.net.0.veth.pair = $LXC_NAME1\nlxc.net.0.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+	sudo sed -i "s/^lxc.net.0.link = lxcbr0$/lxc.net.0.link = lxc_demo\nlxc.net.0.name = eth0\nlxc.net.0.veth.pair = $LXC_NAME1/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
 else
 	sudo sed -i "s/^lxc.network.type = empty$/lxc.network.type = veth\nlxc.network.flags = up\nlxc.network.link = lxc_demo\nlxc.network.name = eth0\nlxc.network.veth.pair = $LXC_NAME1\nlxc.network.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
 fi
@@ -106,9 +107,9 @@ sudo lxc-start -n $LXC_NAME1 -d --logfile "$script_dir/lxc_boot.log" >> "$LOG_BU
 sleep 3
 sudo lxc-ls -f >> "$LOG_BUILD_LXC" 2>&1
 
-echo -e "\e[1m> Update et install aptitude sudo git\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "\e[1m> Update et install aptitude sudo aptitude sudo ssh openssh-server curl\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-attach -n $LXC_NAME1 -- apt-get update
-sudo lxc-attach -n $LXC_NAME1 -- apt-get install -y aptitude sudo git ssh openssh-server
+sudo lxc-attach -n $LXC_NAME1 -- apt-get install -y aptitude sudo ssh openssh-server curl
 echo -e "\e[1m> Installation des paquets standard et ssh-server\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-attach -n $LXC_NAME1 -- aptitude install -y ~pstandard ~prequired ~pimportant
 
@@ -138,18 +139,21 @@ sudo lxc-attach -n $LXC_NAME -- dpkg-reconfigure openssh-server  >> "$LOG_BUILD_
 sudo lxc-attach -n $LXC_NAME -- locale-gen en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
 sudo lxc-attach -n $LXC_NAME -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
 
-ssh $ARG_SSH $LXC_NAME1 "git clone https://github.com/YunoHost/install_script /tmp/install_script" >> "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Installation de Yunohost...\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "cd /tmp/install_script; sudo ./install_yunohost -a" | tee -a "$LOG_BUILD_LXC" 2>&1
+ssh $ARG_SSH $LXC_NAME1 "sudo /bin/bash -c \"curl https://install.yunohost.org/$DIST | bash -s -- -a -d stable\"" | tee -a "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Post install Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD --force-password" | tee -a "$LOG_BUILD_LXC" 2>&1
+
+echo -e "\e[1m> Fix SSH access\e[0m" | tee -a "$LOG_BUILD_LXC"
+sudo lxc-attach -n $LXC_NAME1 -- sed -i "s/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root ssh_demo/" /etc/ssh/sshd_config >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- service sshd restart >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Disable password strength\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost settings set security.password.user.strength -v -1" | tee -a "$LOG_BUILD_LXC"
 
 USER_DEMO_CLEAN=${USER_DEMO//"_"/""}
 echo -e "\e[1m> Ajout de l'utilisateur de demo\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create --firstname \"$USER_DEMO_CLEAN\" --mail \"$USER_DEMO_CLEAN@$DOMAIN\" --lastname \"$USER_DEMO_CLEAN\" --password \"$PASSWORD_DEMO\" \"$USER_DEMO\" --admin-password=\"$YUNO_PWD\""
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create \"$USER_DEMO\" --firstname \"$USER_DEMO_CLEAN\" --lastname \"$USER_DEMO_CLEAN\" --domain \"$DOMAIN\" --password \"$PASSWORD_DEMO\""
 
 echo -e "\e[1m\n> Vérification de l'état de Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost -v" | tee -a "$LOG_BUILD_LXC" 2>&1
@@ -185,7 +189,7 @@ echo -e "\e[36mInstallation de kanboard\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard -a \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Nextcloud
 echo -e "\e[36mInstallation de nextcloud\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud -a \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud -a \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Opensondage
 echo -e "\e[36mInstallation de opensondage\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage -a \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
@@ -197,7 +201,7 @@ echo -e "\e[36mInstallation de piwigo\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo -a \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Rainloop
 echo -e "\e[36mInstallation de rainloop\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&lang=en\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop -a \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Roundcube
 echo -e "\e[36mInstallation de roundcube\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube -a \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0&language=en_GB\"" | tee -a "$LOG_BUILD_LXC"
@@ -215,7 +219,7 @@ echo -e "\e[36mInstallation de transmission\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission -a \"domain=$DOMAIN&path=/torrent\"" | tee -a "$LOG_BUILD_LXC"
 # Ttrss
 echo -e "\e[36mInstallation de ttrss\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss -a \"domain=$DOMAIN&path=/ttrss\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss -a \"domain=$DOMAIN&path=/ttrss&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
 # Wallabag
 echo -e "\e[36mInstallation de wallabag\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 -a \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
@@ -236,8 +240,8 @@ sed -i "3i\<center>Login: $USER_DEMO / Password: $PASSWORD_DEMO</center>" /var/l
 sed -i "s/id=\"user\" type=\"text\" name=\"user\"/id=\"user\" type=\"text\" name=\"user\" value=\"$USER_DEMO\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html
 sed -i "s/id=\"password\" type=\"password\" name=\"password\"/id=\"password\" type=\"password\" name=\"password\" value=\"$PASSWORD_DEMO\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/ssowat/portal/login.html
 
-sed -i "17i\&emsp;&emsp;&emsp;Password: $YUNO_PWD" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms    # Et sur le login admin
-sed -i "s/type=\"password\" id=\"password\" name=\"password\"/type=\"password\" id=\"password\" name=\"password\" value=\"$YUNO_PWD\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms
+#sed -i "17i\&emsp;&emsp;&emsp;Password: $YUNO_PWD" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms    # Et sur le login admin
+#sed -i "s/type=\"password\" id=\"password\" name=\"password\"/type=\"password\" id=\"password\" name=\"password\" value=\"$YUNO_PWD\"/" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms
 
 # Désactive l'installation d'app custom
 sed -i "s@<a role=\"button\" class=\"btn btn-success slide\">{{t 'install'}}</a>@<a role=\"\" class=\"btn btn-success slide\">{{t 'install'}}</a>@g" /var/lib/lxc/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/app/app_catalog_category.ms
@@ -294,6 +298,7 @@ After=network.target
 [Service]
 Type=forking
 ExecStart=$script_dir/demo_start.sh
+RemainAfterExit=true
 ExecStop=$script_dir/demo_stop.sh
 ExecReload=$script_dir/demo_start.sh
 
