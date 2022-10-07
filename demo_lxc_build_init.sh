@@ -85,34 +85,6 @@ server {
 	access_log /var/log/nginx/$DOMAIN-access.log;
 	error_log /var/log/nginx/$DOMAIN-error.log;
 }
-
-server {
-	listen 443 ssl;
-	listen [::]:443 ssl;
-	server_name $DOMAIN;
-
-#	ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-#	ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-	ssl_session_timeout 5m;
-	ssl_session_cache shared:SSL:50m;
-	ssl_prefer_server_ciphers on;
-	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-	ssl_ciphers ALL:!aNULL:!eNULL:!LOW:!EXP:!RC4:!3DES:+HIGH:+MEDIUM;
-	add_header Strict-Transport-Security "max-age=31536000;";
-
-	location / {
-		proxy_pass        https://$DOMAIN;
-		proxy_redirect    off;
-		proxy_set_header  Host \$host;
-		proxy_set_header  X-Real-IP \$remote_addr;
-		proxy_set_header  X-Forwarded-Proto \$scheme;
-		proxy_set_header  X-Forwarded-For \$proxy_add_x_forwarded_for;
-		proxy_set_header  X-Forwarded-Host \$server_name;
-	}
-
-	access_log /var/log/nginx/$DOMAIN-access.log;
-	error_log /var/log/nginx/$DOMAIN-error.log;
-}
 EOF
 
 sudo service nginx reload
@@ -158,7 +130,55 @@ sudo certbot certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN --no-eff-ema
 # sudo sed -i "s/#\tssl_certificate/\tssl_certificate/g" /etc/nginx/conf.d/$DOMAIN.conf
 # Supprime les commentaires dans la conf nginx
 
-sudo sed -i "s/^#//g" /etc/nginx/conf.d/$DOMAIN.conf
+echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF >> "$LOG_BUILD_LXC" 2>&1
+#upstream $DOMAIN  {
+#  server $IP_LXC1:443 ;
+#  server $IP_LXC2:443 ;
+#}
+
+server {
+	listen 80;
+	listen [::]:80;
+	server_name $DOMAIN;
+
+	location '/.well-known/acme-challenge' {
+		default_type "text/plain";
+		root         /tmp/letsencrypt-auto;
+	}
+
+	access_log /var/log/nginx/$DOMAIN-access.log;
+	error_log /var/log/nginx/$DOMAIN-error.log;
+}
+
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+	server_name $DOMAIN;
+
+	ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+	ssl_session_timeout 5m;
+	ssl_session_cache shared:SSL:50m;
+	ssl_prefer_server_ciphers on;
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers ALL:!aNULL:!eNULL:!LOW:!EXP:!RC4:!3DES:+HIGH:+MEDIUM;
+	add_header Strict-Transport-Security "max-age=31536000;";
+
+	location / {
+		proxy_pass        https://$DOMAIN;
+		proxy_redirect    off;
+		proxy_set_header  Host \$host;
+		proxy_set_header  X-Real-IP \$remote_addr;
+		proxy_set_header  X-Forwarded-Proto \$scheme;
+		proxy_set_header  X-Forwarded-For \$proxy_add_x_forwarded_for;
+		proxy_set_header  X-Forwarded-Host \$server_name;
+	}
+
+	access_log /var/log/nginx/$DOMAIN-access.log;
+	error_log /var/log/nginx/$DOMAIN-error.log;
+}
+EOF
+
 sudo service nginx reload
 
 echo -e "\e[1mLe serveur est prêt à déployer les conteneurs de demo.\e[0m"
