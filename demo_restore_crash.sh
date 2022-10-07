@@ -186,4 +186,4 @@ fi
 echo "Réactive le cron switch."
 sudo sed -i "s/#*\*/\*/" /etc/cron.d/demo_switch	# Le cron est décommenté
 echo "Restart la demo."
-./demo_start.sh
+$script_dir/demo_start.sh
