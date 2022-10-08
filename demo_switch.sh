@@ -51,7 +51,7 @@ else
 	# Arrêt du conteneur A. Il est remplacé par le B
 	sudo touch /var/lib/lxc/$LXC_A.lock_fileS	# Met en place un fichier pour indiquer que la machine n'est pas encore dispo.
 	# Supprime les éventuels swap présents.
-	swapoff /var/lib/lxc/$LXC_A/rootfs/swap_*
+	/sbin/swapoff /var/lib/lxc/$LXC_A/rootfs/swap_*
 	# Restaure le snapshot de la machine A avant sa prochaine exécution
 	sudo lxc-snapshot -r snap0 -n $LXC_A
 	sudo rm /var/lib/lxc/$LXC_A.lock_fileS	# Libère le lock
