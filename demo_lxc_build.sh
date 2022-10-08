@@ -76,7 +76,7 @@ echo -e "\e[1m> Configuration réseau du conteneur\e[0m" | tee -a "$LOG_BUILD_LX
 if [ $new_lxc -eq 1 ]; then
 	sudo sed -i "s/^lxc.net.0.link = lxcbr0$/lxc.net.0.link = lxc_demo\nlxc.net.0.name = eth0\nlxc.net.0.veth.pair = $LXC_NAME1/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
 else
-	sudo sed -i "s/^lxc.network.type = empty$/lxc.network.type = veth\nlxc.network.flags = up\nlxc.network.link = lxc_demo\nlxc.network.name = eth0\nlxc.network.veth.pair = $LXC_NAME1\nlxc.network.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
+	sudo sed -i "s/^lxc.net.0.type = empty$/lxc.net.0.type = veth\nlxc.net.0.flags = up\nlxc.net.0.link = lxc_demo\nlxc.net.0.name = eth0\nlxc.net.0.veth.pair = $LXC_NAME1\nlxc.net.0.hwaddr = 00:FF:AA:00:00:03/" /var/lib/lxc/$LXC_NAME1/config >> "$LOG_BUILD_LXC" 2>&1
 fi
 
 echo -e "\e[1m> Configuration réseau de la machine virtualisée\e[0m" | tee -a "$LOG_BUILD_LXC"
@@ -271,7 +271,7 @@ sudo lxc-copy --name=$LXC_NAME1 --newname=$LXC_NAME2 >> "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Modification de l'ip du clone\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s@address $IP_LXC1@address $IP_LXC2@" /var/lib/lxc/$LXC_NAME2/rootfs/etc/network/interfaces >> "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Et le nom du veth\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo sed -i "s@^lxc.network.veth.pair = $LXC_NAME1@lxc.network.veth.pair = $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/config >> "$LOG_BUILD_LXC" 2>&1
+sudo sed -i "s@^lxc.net.0.veth.pair = $LXC_NAME1@lxc.net.0.veth.pair = $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/config >> "$LOG_BUILD_LXC" 2>&1
 echo -e "\e[1m> Et enfin renseigne /etc/hosts sur le clone\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo sed -i "s@^127.0.0.1 $LXC_NAME1@127.0.0.1 $LXC_NAME2@" /var/lib/lxc/$LXC_NAME2/rootfs/etc/hosts >> "$LOG_BUILD_LXC" 2>&1
 
