@@ -33,9 +33,6 @@ fi
 # Supprime les éventuels swap présents.
 /sbin/swapoff /var/lib/lxc/$LXC_A/rootfs/swap_*
 
-# Workaround for demo.yunohost.org no able to start the two lxcs
-sudo lxc-stop -n $LXC_A
-
 # Démarre le conteneur B et arrête le conteneur A.
 sudo lxc-start -n $LXC_B -o "$script_dir/demo_switch.log" -d > /dev/null	# Démarre l'autre machine
 sleep 10	# Attend 10 seconde pour s'assurer du démarrage de la machine.
@@ -50,6 +47,7 @@ else
 	# Automatique par nginx lorsque la machine A sera éteinte.
 	# Arrêt du conteneur A. Il est remplacé par le B
 	sudo touch /var/lib/lxc/$LXC_A.lock_fileS	# Met en place un fichier pour indiquer que la machine n'est pas encore dispo.
+	sudo lxc-stop -n $LXC_A
 	# Supprime les éventuels swap présents.
 	/sbin/swapoff /var/lib/lxc/$LXC_A/rootfs/swap_*
 	# Restaure le snapshot de la machine A avant sa prochaine exécution
