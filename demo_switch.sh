@@ -14,6 +14,7 @@ DOMAIN=$(cat "$script_dir/domain.ini")
 
 log_line=$(wc -l "$script_dir/demo_switch.log" | cut -d ' ' -f 1)	# Repère la fin du log actuel. Pour récupérer les lignes ajoutées sur cette exécution.
 log_line=$(( $log_line + 1 ))	# Ignore la première ligne, reprise de l'ancien log.
+date >> "$script_dir/demo_switch.log"
 
 while test -e /var/lib/lxc/$LXC_NAME1.lock_file* || test -e /var/lib/lxc/$LXC_NAME2.lock_file*; do
 	sleep 5	# Attend que le conteneur soit libéré par les script upgrade ou switch, le cas échéant.
@@ -33,6 +34,7 @@ fi
 # Supprime les éventuels swap présents.
 /sbin/swapoff /var/lib/lxc/$LXC_A/rootfs/swap_*
 
+echo "Starting $LXC_B"
 # Démarre le conteneur B et arrête le conteneur A.
 sudo lxc-start -n $LXC_B -o "$script_dir/demo_switch.log" -d > /dev/null	# Démarre l'autre machine
 sleep 10	# Attend 10 seconde pour s'assurer du démarrage de la machine.
@@ -43,6 +45,7 @@ then
 	$script_dir/demo_restore_crash.sh &
 	exit 1
 else
+	echo "Stopping $LXC_A"
 	# Bascule sur le conteneur B avec le load balancing de nginx...
 	# Automatique par nginx lorsque la machine A sera éteinte.
 	# Arrêt du conteneur A. Il est remplacé par le B
@@ -50,6 +53,7 @@ else
 	sudo lxc-stop -n $LXC_A
 	# Supprime les éventuels swap présents.
 	/sbin/swapoff /var/lib/lxc/$LXC_A/rootfs/swap_*
+	echo "Restauring $LXC_A from snapshot"
 	# Restaure le snapshot de la machine A avant sa prochaine exécution
 	sudo lxc-snapshot -r snap0 -n $LXC_A
 	sudo rm /var/lib/lxc/$LXC_A.lock_fileS	# Libère le lock

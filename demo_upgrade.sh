@@ -20,10 +20,12 @@ LOOP=0
 
 log_line=$(wc -l "$script_dir/demo_upgrade.log" | cut -d ' ' -f 1)	# Repère la fin du log actuel. Pour récupérer les lignes ajoutées sur cette exécution.
 log_line=$(( $log_line + 1 ))	# Ignore la première ligne, reprise de l'ancien log.
+date >> "$script_dir/demo_upgrade.log"
 
 UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	MACHINE=$1
 	IP_MACHINE=$2
+	echo "Upgrading $MACHINE"
 	# Attend que la machine soit éteinte.
 	# Timeout à $TIME_TO_SWITCH +5 minutes, en seconde
 	TIME_OUT=$(($TIME_TO_SWITCH * 60 + 300))
@@ -83,7 +85,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
             sudo lxc-attach -n $MACHINE -- apt-get autoclean
 	fi
 	sudo lxc-attach -n $MACHINE -- yunohost tools update
-	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade --system
+	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade system
 
 	# Exécution des scripts de upgrade.d
 	LOOP=$((LOOP + 1))
@@ -157,6 +159,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 		fi
 	fi
 	sudo rm /var/lib/lxc/$MACHINE.lock_fileU	# Libère le lock, la machine est à nouveau disponible
+	echo "Finished upgrading $MACHINE"
 }
 
 echo ""
