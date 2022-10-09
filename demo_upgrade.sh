@@ -128,7 +128,7 @@ UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
 	# Upgrade des apps
 	sudo lxc-attach -n $MACHINE -- yunohost tools update
 	sudo lxc-attach -n $MACHINE -- systemctl restart nginx
-	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade --apps
+	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade apps
 	sudo lxc-attach -n $MACHINE -- systemctl restart nginx
 
 	# Arrêt de la machine virtualisée
