@@ -57,5 +57,5 @@ else
 	# Restaure le snapshot de la machine A avant sa prochaine exécution
 	sudo lxc-snapshot -r snap0 -n $LXC_A
 	sudo rm /var/lib/lxc/$LXC_A.lock_fileS	# Libère le lock
-	echo "Finish restoring $LXC_A"
+	echo "Finish restauring $LXC_A"
 fi
