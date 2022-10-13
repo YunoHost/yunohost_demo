@@ -69,8 +69,6 @@ ynh_lxc_run_inside --name="$lxc_name1" --command="yunohost -v" | tee -a "$LOG_BU
 # ********
 ynh_print_info --message="\e[1m>> Modification de Yunohost pour la demo\e[0m" | tee -a "$LOG_BUILD_LXC"
 
-if [ ! -z "$PACKAGE_CHECK_EXEC" ]
-then
 # App officielles
 ynh_print_info --message="\e[1m> Installation des applications officielles\e[0m" | tee -a "$LOG_BUILD_LXC"
 # Ampache
@@ -144,7 +142,7 @@ ynh_lxc_run_inside --name="$lxc_name1" --command="yunohost app install wordpress
 # Zerobin
 ynh_print_info --message="\e[36mInstallation de zerobin\e[0m" | tee -a "$LOG_BUILD_LXC"
 ynh_lxc_run_inside --name="$lxc_name1" --command="yunohost app install zerobin --force --args \"domain=$domain&path=/zerobin&is_public=1&\"" | tee -a "$LOG_BUILD_LXC"
-fi
+
 # ********
 
 ynh_print_info --message="\e[1m> Création d'un snapshot\e[0m" | tee -a "$LOG_BUILD_LXC"
