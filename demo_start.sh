@@ -1,38 +1,25 @@
 #!/bin/bash
 
-# Démarre le premier conteneur de demo et active la config réseau dédiée.
+# Démarre le premier conteneur de demo
 
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
-PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
-LXC_NAME=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
+source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
+source /usr/share/yunohost/helpers
 
-"$script_dir/demo_stop.sh" > /dev/null 2>&1
+app=${__APP__:-yunohost_demo}
+final_path=$(ynh_app_setting_get --app=$app --key=final_path)
+lxc_name1=$(ynh_app_setting_get --app=$app --key=lxc_name1)
+lxdbr_demo_network=$(ynh_app_setting_get --app=$app --key=lxdbr_demo_network)
+lxc_ip1=$(ynh_app_setting_get --app=$app --key=lxc_ip1)
 
-echo "Initialisation du réseau pour le conteneur."
-if ! sudo ifquery lxc_demo --state > /dev/null; then
-	sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo
-fi
-
-# Activation des règles iptables
-echo "> Configure le parefeu"
-if ! sudo iptables -D FORWARD -i lxc_demo -o eth0 -j ACCEPT 2> /dev/null; then
-	sudo iptables -A FORWARD -i lxc_demo -o eth0 -j ACCEPT
-fi
-if ! sudo iptables -C FORWARD -i eth0 -o lxc_demo -j ACCEPT 2> /dev/null; then
-	sudo iptables -A FORWARD -i eth0 -o lxc_demo -j ACCEPT
-fi
-if ! sudo iptables -t nat -C POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE 2> /dev/null; then
-	sudo iptables -t nat -A POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE
-fi
+/bin/bash "$final_path/demo_stop.sh" > /dev/null 2>&1
 
 # Démarrage de la machine
-echo "> Démarrage de la machine"
-date >> "$script_dir/demo_boot.log"
-echo "Starting $LXC_NAME" >> "$script_dir/demo_boot.log"
-sudo lxc-start -n $LXC_NAME -o "$script_dir/demo_boot.log" -d
+ynh_print_info --message="> Démarrage de la machine" | tee -a "$final_path/demo_boot.log"
+date | tee -a "$final_path/demo_boot.log"
+ynh_print_info --message="Starting $lxc_name1" | tee -a "$final_path/demo_boot.log"
+ynh_lxc_start_as_demo --name=$lxc_name1 --ip="$lxdbr_demo_network$lxc_ip1"  | tee -a "$final_path/demo_boot.log"
 sleep 3
-
-# Vérifie que la machine a démarré
-sudo lxc-ls -f

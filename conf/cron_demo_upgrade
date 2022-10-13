@@ -1,0 +1,2 @@
+# Vérifie les mises à jour des conteneurs de demo, lorsqu'ils ne sont pas utilisés, à partir de 3h2minutes chaque nuit. Attention à rester sur un multiple du temps de switch.
+2 3 * * * root /bin/bash __FINAL_PATH__/demo_upgrade.sh >> "__FINAL_PATH__/demo_upgrade.log" 2>&1

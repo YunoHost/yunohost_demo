@@ -1,0 +1,2 @@
+# Switch des conteneurs toutes les __TIME_TO_SWITCH__ minutes
+*/__TIME_TO_SWITCH__ * * * * root /bin/bash __FINAL_PATH__/demo_switch.sh >> "__FINAL_PATH__/demo_switch.log" 2>&1

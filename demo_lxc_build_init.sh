@@ -7,11 +7,11 @@ if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(
 
 LOG=$(cat "$script_dir/demo_lxc_build.sh" | grep LOG= | cut -d '=' -f2)
 LOG_BUILD_LXC="$script_dir/$LOG"
-LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
-LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
-PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
-IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
-IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
+lxc_name1=$(cat "$script_dir/demo_lxc_build.sh" | grep lxc_name1= | cut -d '=' -f2)
+lxc_name2=$(cat "$script_dir/demo_lxc_build.sh" | grep lxc_name2= | cut -d '=' -f2)
+lxdbr_demo_network=$(cat "$script_dir/demo_lxc_build.sh" | grep lxdbr_demo_network= | cut -d '=' -f2)
+lxc_ip1=$(cat "$script_dir/demo_lxc_build.sh" | grep lxc_ip1= | cut -d '=' -f2)
+lxc_ip2=$(cat "$script_dir/demo_lxc_build.sh" | grep lxc_ip2= | cut -d '=' -f2)
 MAIL_ADDR=$(cat "$script_dir/demo_lxc_build.sh" | grep MAIL_ADDR= | cut -d '=' -f2)
 
 # Check user
@@ -24,52 +24,52 @@ echo "$DOMAIN" > "$script_dir/domain.ini"
 sudo mkdir -p $(dirname $LOG_BUILD_LXC)
 
 echo -e "\e[1m> Update et install lxc, lxctl et mailutils\e[0m" | tee "$LOG_BUILD_LXC"
-sudo apt-get update >> "$LOG_BUILD_LXC" 2>&1
-sudo apt-get install -y lxc lxctl mailutils certbot >> "$LOG_BUILD_LXC" 2>&1
+sudo apt-get update | tee -a "$LOG_BUILD_LXC" 2>&1
+sudo apt-get install -y lxc lxctl mailutils certbot | tee -a "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Autoriser l'ip forwarding, pour router vers la machine virtuelle.\e[0m" | tee -a "$LOG_BUILD_LXC"
-echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/lxc_demo.conf >> "$LOG_BUILD_LXC" 2>&1
-sudo sysctl -p /etc/sysctl.d/lxc_demo.conf >> "$LOG_BUILD_LXC" 2>&1
+echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/lxc_demo.conf | tee -a "$LOG_BUILD_LXC" 2>&1
+sudo sysctl -p /etc/sysctl.d/lxc_demo.conf | tee -a "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Ajoute un brige réseau pour la machine virtualisée\e[0m" | tee -a "$LOG_BUILD_LXC"
-echo | sudo tee /etc/network/interfaces.d/lxc_demo <<EOF >> "$LOG_BUILD_LXC" 2>&1
+echo | sudo tee /etc/network/interfaces.d/lxc_demo <<EOF | tee -a "$LOG_BUILD_LXC" 2>&1
 auto lxc_demo
 iface lxc_demo inet static
-        address $PLAGE_IP.1/24
-        bridge_ports none
-        bridge_fd 0
-        bridge_maxwait 0
+		address $lxdbr_demo_network.1/24
+		bridge_ports none
+		bridge_fd 0
+		bridge_maxwait 0
 EOF
 
 echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
-sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo >> "$LOG_BUILD_LXC" 2>&1
+sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo | tee -a "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Mise en place de la connexion ssh vers l'invité.\e[0m" | tee -a "$LOG_BUILD_LXC"
-if [ -e $HOME/.ssh/$LXC_NAME1 ]; then
-	rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
-	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC1
-	ssh-keygen -f $HOME/.ssh/known_hosts -R $IP_LXC2
+if [ -e $HOME/.ssh/$lxc_name1 ]; then
+	rm -f $HOME/.ssh/$lxc_name1 $HOME/.ssh/$lxc_name1.pub
+	ssh-keygen -f $HOME/.ssh/known_hosts -R $lxdbr_demo_network$lxc_ip1
+	ssh-keygen -f $HOME/.ssh/known_hosts -R $lxdbr_demo_network$lxc_ip2
 fi
-ssh-keygen -t rsa -f $HOME/.ssh/$LXC_NAME1 -P '' >> "$LOG_BUILD_LXC" 2>&1
+ssh-keygen -t rsa -f $HOME/.ssh/$lxc_name1 -P '' | tee -a "$LOG_BUILD_LXC" 2>&1
 
-echo | tee -a $HOME/.ssh/config <<EOF >> "$LOG_BUILD_LXC" 2>&1
-# ssh $LXC_NAME1
-Host $LXC_NAME1
-Hostname $IP_LXC1
+echo | tee -a $HOME/.ssh/config <<EOF | tee -a "$LOG_BUILD_LXC" 2>&1
+# ssh $lxc_name1
+Host $lxc_name1
+Hostname $lxdbr_demo_network$lxc_ip1
 User ssh_demo
-IdentityFile $HOME/.ssh/$LXC_NAME1
-Host $LXC_NAME2
-Hostname $IP_LXC2
+IdentityFile $HOME/.ssh/$lxc_name1
+Host $lxc_name2
+Hostname $lxdbr_demo_network$lxc_ip2
 User ssh_demo
-IdentityFile $HOME/.ssh/$LXC_NAME1
-# End ssh $LXC_NAME1
+IdentityFile $HOME/.ssh/$lxc_name1
+# End ssh $lxc_name1
 EOF
 
 echo -e "\e[1m> Mise en place du reverse proxy et du load balancing\e[0m" | tee -a "$LOG_BUILD_LXC"
-echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF >> "$LOG_BUILD_LXC" 2>&1
+echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF | tee -a "$LOG_BUILD_LXC" 2>&1
 #upstream $DOMAIN  {
-#  server $IP_LXC1:443 ;
-#  server $IP_LXC2:443 ;
+#  server $lxdbr_demo_network$lxc_ip1:443 ;
+#  server $lxdbr_demo_network$lxc_ip2:443 ;
 #}
 
 server {
@@ -79,7 +79,7 @@ server {
 
 	location '/.well-known/acme-challenge' {
 		default_type "text/plain";
-		root         /tmp/letsencrypt-auto;
+		root		 /tmp/letsencrypt-auto;
 	}
 
 	access_log /var/log/nginx/$DOMAIN-access.log;
@@ -93,7 +93,7 @@ echo -e "\e[1m> Création du certificat SSL.\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo mkdir -p /etc/letsencrypt
 
 # Créer le fichier de config
-echo | sudo tee /etc/letsencrypt/conf.ini <<EOF >> "$LOG_BUILD_LXC" 2>&1
+echo | sudo tee /etc/letsencrypt/conf.ini <<EOF | tee -a "$LOG_BUILD_LXC" 2>&1
 #################################
 #  Let's encrypt configuration  #
 #################################
@@ -125,15 +125,15 @@ mkdir -p /tmp/letsencrypt-auto
 sudo certbot certonly --config /etc/letsencrypt/conf.ini -d $DOMAIN --no-eff-email
 
 # Route l'upstream sur le port 443. Le port 80 servait uniquement à let's encrypt
-# sudo sed -i "s/server $IP_LXC1:80 ;/server $IP_LXC1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
+# sudo sed -i "s/server $lxdbr_demo_network$lxc_ip1:80 ;/server $lxdbr_demo_network$lxc_ip1:443 ;/" /etc/nginx/conf.d/$DOMAIN.conf
 # Décommente les lignes du certificat
 # sudo sed -i "s/#\tssl_certificate/\tssl_certificate/g" /etc/nginx/conf.d/$DOMAIN.conf
 # Supprime les commentaires dans la conf nginx
 
-echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF >> "$LOG_BUILD_LXC" 2>&1
+echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF | tee -a "$LOG_BUILD_LXC" 2>&1
 #upstream $DOMAIN  {
-#  server $IP_LXC1:443 ;
-#  server $IP_LXC2:443 ;
+#  server $lxdbr_demo_network$lxc_ip1:443 ;
+#  server $lxdbr_demo_network$lxc_ip2:443 ;
 #}
 
 server {
@@ -143,7 +143,7 @@ server {
 
 	location '/.well-known/acme-challenge' {
 		default_type "text/plain";
-		root         /tmp/letsencrypt-auto;
+		root		 /tmp/letsencrypt-auto;
 	}
 
 	access_log /var/log/nginx/$DOMAIN-access.log;
@@ -165,8 +165,8 @@ server {
 	add_header Strict-Transport-Security "max-age=31536000;";
 
 	location / {
-		proxy_pass        https://$DOMAIN;
-		proxy_redirect    off;
+		proxy_pass		https://$DOMAIN;
+		proxy_redirect	off;
 		proxy_set_header  Host \$host;
 		proxy_set_header  X-Real-IP \$remote_addr;
 		proxy_set_header  X-Forwarded-Proto \$scheme;
