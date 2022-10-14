@@ -19,17 +19,17 @@ lxc_ip2=$(ynh_app_setting_get --app=$app --key=lxc_ip2)
 
 /bin/bash "$final_path/demo_stop.sh" -f
 
-ynh_print_info --message="\e[1m> Suppression des conteneurs et de leur snapshots\e[0m"
+ynh_print_info --message="> Suppression des conteneurs et de leur snapshots"
 ynh_secure_remove --file="/var/lib/lxd/snapshots/$lxc_name1/snap0.tar.gz"
 ynh_lxc_delete --name=$lxc_name1
 ynh_secure_remove --file="/var/lib/lxd/snapshots/$lxc_name2/snap0.tar.gz"
 ynh_lxc_delete --name=$lxc_name2
 
-ynh_print_info --message="\e[1m> Suppression des crons\e[0m"
+ynh_print_info --message="> Suppression des crons"
 ynh_secure_remove --file=/etc/cron.d/demo_switch
 ynh_secure_remove --file=/etc/cron.d/demo_upgrade
 
-ynh_print_info --message="\e[1m> Suppression du service\e[0m"
+ynh_print_info --message="> Suppression du service"
 if ynh_exec_warn_less yunohost service status $app >/dev/null
 then
 	ynh_print_info --message="Removing $app service integration..."

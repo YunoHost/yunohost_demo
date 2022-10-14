@@ -23,15 +23,15 @@ echo "$DOMAIN" > "$script_dir/domain.ini"
 # Créer le dossier de log
 sudo mkdir -p $(dirname $LOG_BUILD_LXC)
 
-echo -e "\e[1m> Update et install lxc, lxctl et mailutils\e[0m" | tee "$LOG_BUILD_LXC"
+echo -e "> Update et install lxc, lxctl et mailutils" | tee "$LOG_BUILD_LXC"
 sudo apt-get update | tee -a "$LOG_BUILD_LXC" 2>&1
 sudo apt-get install -y lxc lxctl mailutils certbot | tee -a "$LOG_BUILD_LXC" 2>&1
 
-echo -e "\e[1m> Autoriser l'ip forwarding, pour router vers la machine virtuelle.\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "> Autoriser l'ip forwarding, pour router vers la machine virtuelle." | tee -a "$LOG_BUILD_LXC"
 echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/lxc_demo.conf | tee -a "$LOG_BUILD_LXC" 2>&1
 sudo sysctl -p /etc/sysctl.d/lxc_demo.conf | tee -a "$LOG_BUILD_LXC" 2>&1
 
-echo -e "\e[1m> Ajoute un brige réseau pour la machine virtualisée\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "> Ajoute un brige réseau pour la machine virtualisée" | tee -a "$LOG_BUILD_LXC"
 echo | sudo tee /etc/network/interfaces.d/lxc_demo <<EOF | tee -a "$LOG_BUILD_LXC" 2>&1
 auto lxc_demo
 iface lxc_demo inet static
@@ -41,10 +41,10 @@ iface lxc_demo inet static
 		bridge_maxwait 0
 EOF
 
-echo -e "\e[1m> Active le bridge réseau\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "> Active le bridge réseau" | tee -a "$LOG_BUILD_LXC"
 sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo | tee -a "$LOG_BUILD_LXC" 2>&1
 
-echo -e "\e[1m> Mise en place de la connexion ssh vers l'invité.\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "> Mise en place de la connexion ssh vers l'invité." | tee -a "$LOG_BUILD_LXC"
 if [ -e $HOME/.ssh/$lxc_name1 ]; then
 	rm -f $HOME/.ssh/$lxc_name1 $HOME/.ssh/$lxc_name1.pub
 	ssh-keygen -f $HOME/.ssh/known_hosts -R $lxdbr_demo_network$lxc_ip1
@@ -65,7 +65,7 @@ IdentityFile $HOME/.ssh/$lxc_name1
 # End ssh $lxc_name1
 EOF
 
-echo -e "\e[1m> Mise en place du reverse proxy et du load balancing\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "> Mise en place du reverse proxy et du load balancing" | tee -a "$LOG_BUILD_LXC"
 echo | sudo tee /etc/nginx/conf.d/$DOMAIN.conf <<EOF | tee -a "$LOG_BUILD_LXC" 2>&1
 #upstream $DOMAIN  {
 #  server $lxdbr_demo_network$lxc_ip1:443 ;
@@ -89,7 +89,7 @@ EOF
 
 sudo service nginx reload
 
-echo -e "\e[1m> Création du certificat SSL.\e[0m" | tee -a "$LOG_BUILD_LXC"
+echo -e "> Création du certificat SSL." | tee -a "$LOG_BUILD_LXC"
 sudo mkdir -p /etc/letsencrypt
 
 # Créer le fichier de config
@@ -181,8 +181,8 @@ EOF
 
 sudo service nginx reload
 
-echo -e "\e[1mLe serveur est prêt à déployer les conteneurs de demo.\e[0m"
-echo -e "\e[1mExécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo.\e[0m"
+echo -e "Le serveur est prêt à déployer les conteneurs de demo."
+echo -e "Exécutez le script demo_lxc_build.sh pour créer les conteneurs et mettre en place la demo."
 
 # Déploie les conteneurs de demo
 # "$script_dir/demo_lxc_build.sh"

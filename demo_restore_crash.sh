@@ -36,14 +36,14 @@ ynh_lxc_check_container_start --name=$lxc_name2
 LXC2_STATUS=$?
 
 if [ $LXC1_STATUS -eq 1 ]; then
-	ynh_print_info --message="\e[91m> Conteneur $lxc_name1 en défaut.\e[0m"
+	ynh_print_info --message="> Conteneur $lxc_name1 en défaut."
 else
-	ynh_print_info --message="\e[92m> Conteneur $lxc_name1 en état de marche.\e[0m"
+	ynh_print_info --message="> Conteneur $lxc_name1 en état de marche."
 fi
 if [ $LXC2_STATUS -eq 1 ]; then
-	ynh_print_info --message="\e[91m> Conteneur $lxc_name2 en défaut.\e[0m"
+	ynh_print_info --message="> Conteneur $lxc_name2 en défaut."
 else
-	ynh_print_info --message="\e[92m> Conteneur $lxc_name2 en état de marche.\e[0m"
+	ynh_print_info --message="> Conteneur $lxc_name2 en état de marche."
 fi
 
 # Restauration des snapshots
@@ -79,13 +79,13 @@ fi
 # Résultats finaux
 if [ $LXC1_STATUS -eq 1 ] || [ $LXC2_STATUS -eq 1 ]; then
 	if [ $LXC1_STATUS -eq 1 ]; then
-		ynh_print_info --message="\e[91m\n> Le conteneur $lxc_name1 n'a pas pu être réparé...\e[0m"
+		ynh_print_info --message="> Le conteneur $lxc_name1 n'a pas pu être réparé..."
 	fi
 	if [ $LXC2_STATUS -eq 1 ]; then
-		ynh_print_info --message="\e[91m\n> Le conteneur $lxc_name2 n'a pas pu être réparé...\e[0m"
+		ynh_print_info --message="> Le conteneur $lxc_name2 n'a pas pu être réparé..."
 	fi
 else
-	ynh_print_info --message="\e[92m\n> Les 2 conteneurs sont sains et fonctionnels.\e[0m"
+	ynh_print_info --message="> Les 2 conteneurs sont sains et fonctionnels."
 fi
 
 ynh_print_info --message="Réactive le cron switch."

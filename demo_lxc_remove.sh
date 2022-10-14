@@ -17,12 +17,12 @@ path_url=$(ynh_app_setting_get --app=$app --key=path)
 /bin/bash "$final_path/demo_lxc_destroy.sh"
 
 # Suppression du reverse proxy
-echo -e "\e[1m> Suppression de la config nginx\e[0m"
+echo -e "> Suppression de la config nginx"
 sudo rm /etc/nginx/conf.d/$DOMAIN.conf
 sudo service nginx reload
 
 # Suppression du certificat Let's encrypt
-echo -e "\e[1m> Suppression de Let's encrypt\e[0m"
+echo -e "> Suppression de Let's encrypt"
 sudo rm -r /etc/letsencrypt
 sudo rm -r ~/.local/share/letsencrypt
 sudo rm -r ~/letsencrypt
