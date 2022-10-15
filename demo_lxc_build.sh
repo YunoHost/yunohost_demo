@@ -152,21 +152,21 @@ fi
 ynh_print_info --message="> Creating a snapshot for $lxc_name1" | tee -a "$LOG_BUILD_LXC" 2>&1
 ynh_lxc_create_snapshot --name="$lxc_name1" --snapname="snap0"
 
-ynh_print_info --message="> Upgrading the $lxc_name1" | tee -a "$LOG_BUILD_LXC" 2>&1
+ynh_print_info --message="> Upgrading the $lxc_name1 LXC container" | tee -a "$LOG_BUILD_LXC" 2>&1
 ynh_lxc_stop --name="$lxc_name1" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_lxc_upgrade_demo --name=$lxc_name1 --time_to_switch=$time_to_switch
+ynh_lxc_upgrade_demo --name=$lxc_name1 --time_to_switch=$time_to_switch | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> Cloning $lxc_name1 to $lxc_name2" | tee -a "$LOG_BUILD_LXC" 2>&1
 ynh_lxc_clone --source="$lxc_name1" --destination="$lxc_name2" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> Creating a snapshot for $lxc_name2" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_lxc_create_snapshot --name="$lxc_name2" --snapname="snap0"
+ynh_lxc_create_snapshot --name="$lxc_name2" --snapname="snap0" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> Setuping the switch cron" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_add_config --template="$final_path/conf/cron_demo_switch" --destination="/etc/cron.d/demo_switch"
+ynh_add_config --template="$final_path/conf/cron_demo_switch" --destination="/etc/cron.d/demo_switch" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> and the upgrade cron" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_add_config --template="$final_path/conf/cron_demo_upgrade" --destination="/etc/cron.d/demo_upgrade"
+ynh_add_config --template="$final_path/conf/cron_demo_upgrade" --destination="/etc/cron.d/demo_upgrade" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> Setuping the service" | tee -a "$LOG_BUILD_LXC" 2>&1
 #ynh_add_systemd_config --template="$final_path/conf/systemd.service"

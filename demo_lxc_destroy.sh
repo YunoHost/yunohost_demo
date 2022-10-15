@@ -22,9 +22,9 @@ ynh_print_info --message=">> Starting demo destroy."
 /bin/bash "$final_path/demo_stop.sh" -f
 
 ynh_print_info --message="> Deleting containers and snapshots"
-ynh_secure_remove --file="/var/lib/lxd/snapshots/$lxc_name1/snap0.tar.gz"
+ynh_exec_warn_less ynh_secure_remove --file="/var/lib/lxd/snapshots/$lxc_name1/snap0.tar.gz"
 ynh_lxc_delete --name=$lxc_name1
-ynh_secure_remove --file="/var/lib/lxd/snapshots/$lxc_name2/snap0.tar.gz"
+ynh_exec_warn_less ynh_secure_remove --file="/var/lib/lxd/snapshots/$lxc_name2/snap0.tar.gz"
 ynh_lxc_delete --name=$lxc_name2
 
 ynh_print_info --message="> Deleting crons"

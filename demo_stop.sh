@@ -20,10 +20,10 @@ ynh_print_info --message=">> Stopping demo." | tee -a "$final_path/demo_boot.log
 if [ "$#" -eq 1 ] && [ "$1" == "-f" ]
 then
 	ynh_print_info --message="> Deleting locks and force stopping LXC containers." | tee -a "$final_path/demo_boot.log" 2>&1
-	ynh_secure_remove --file="/var/lib/lxd/$lxc_name1.lock_fileS"
-	ynh_secure_remove --file="/var/lib/lxd/$lxc_name2.lock_fileS"
-	ynh_secure_remove --file="/var/lib/lxd/$lxc_name1.lock_fileU"
-	ynh_secure_remove --file="/var/lib/lxd/$lxc_name2.lock_fileU"
+	ynh_exec_warn_less ynh_secure_remove --file="/var/lib/lxd/$lxc_name1.lock_fileS"
+	ynh_exec_warn_less ynh_secure_remove --file="/var/lib/lxd/$lxc_name2.lock_fileS"
+	ynh_exec_warn_less ynh_secure_remove --file="/var/lib/lxd/$lxc_name1.lock_fileU"
+	ynh_exec_warn_less ynh_secure_remove --file="/var/lib/lxd/$lxc_name2.lock_fileU"
 else
 	ynh_print_info --message="> Waiting locks." | tee -a "$final_path/demo_boot.log" 2>&1
 	while test -e /var/lib/lxd/$lxc_name1.lock_file* || test -e /var/lib/lxd/$lxc_name2.lock_file*; do

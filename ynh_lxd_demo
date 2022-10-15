@@ -157,7 +157,7 @@ ynh_lxc_upgrade_demo() {
 	if [ "$update_apt" -eq "1" ]
 	then
 		# Archivage du snapshot
-		tar -cz --acls --xattrs -f /var/lib/lxd/snapshots/$name/snap0.tar.gz /var/lib/lxd/snapshots/$name/snap0
+		ynh_exec_warn_less tar -cz --acls --xattrs -f /var/lib/lxd/snapshots/$name/snap0.tar.gz /var/lib/lxd/snapshots/$name/snap0
 		# Remplacement du snapshot
 		ynh_lxc_create_snapshot --name=$name --snapname=snap0
 
