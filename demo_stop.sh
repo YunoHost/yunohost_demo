@@ -29,13 +29,19 @@ else
 fi
 
 ynh_print_info --message="> Arrêt des conteneurs"
-if ! ynh_lxc_is_stopped --name=$lxc_name1
+if ynh_lxc_exists --name=$lxc_name1
 then
-	ynh_print_info --message="Arrêt du conteneur $lxc_name1"
-	ynh_lxc_stop_as_demo --name=$lxc_name1
+	if ! ynh_lxc_is_stopped --name=$lxc_name1
+	then
+		ynh_print_info --message="Arrêt du conteneur $lxc_name1"
+		ynh_lxc_stop_as_demo --name=$lxc_name1
+	fi
 fi
-if ! ynh_lxc_is_stopped --name=$lxc_name2
+if ynh_lxc_exists --name=$lxc_name2
 then
-	ynh_print_info --message="Arrêt du conteneur $lxc_name2"
-	ynh_lxc_stop_as_demo --name=$lxc_name2
+	if ! ynh_lxc_is_stopped --name=$lxc_name2
+	then
+		ynh_print_info --message="Arrêt du conteneur $lxc_name2"
+		ynh_lxc_stop_as_demo --name=$lxc_name2
+	fi
 fi
