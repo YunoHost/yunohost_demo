@@ -69,8 +69,7 @@ ynh_lxc_run_inside --name="$lxc_name1" --command="yunohost -v" | tee -a "$LOG_BU
 # ********
 ynh_print_info --message="> Modification de Yunohost pour la demo" | tee -a "$LOG_BUILD_LXC"
 
-if [ ! -z "$PACKAGE_CHECK_EXEC" ]
-then
+if [ ${FOR_PACKAGE_CHECK:-0} -eq 1 ]; then
 # App officielles
 ynh_print_info --message="> Installation des applications officielles" | tee -a "$LOG_BUILD_LXC"
 # Ampache
