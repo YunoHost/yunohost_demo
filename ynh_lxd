@@ -543,14 +543,14 @@ ynh_lxc_restore_from_snapshot () {
 	# Manage arguments with getopts
 	ynh_handle_getopts_args "$@"
 
-	ynh_print_info --message="\e[1m> Restauration du snapshot du conteneur $name\e[0m"
+	ynh_print_info --message="Restoring LXC container $name from snapshot"
 	ynh_lxc_load_snapshot --name=$name --snapname=snap0
 	if ynh_lxc_check_container_start --name=$name
 	then
-		ynh_print_info --message="\e[92m> LXC container $name is working.\e[0m"
+		ynh_print_info --message="LXC container $name is working."
 		return 0
 	else
-		ynh_print_info --message="\e[91m> LXC container $name is broken.\e[0m"
+		ynh_print_info --message="LXC container $name is broken."
 		return 1
 	fi
 }
@@ -570,13 +570,13 @@ ynh_lxc_restore_from_archive () {
 	ynh_handle_getopts_args "$@"
 
 	if ! test -e "/var/lib/lxd/snapshots/$name/snap1.tar.gz"; then
-		ynh_print_info --message="Aucune archive de snapshot pour le conteneur $name"
+		ynh_print_info --message="No snapshot archive for LXC container $name"
 		return 1
 	fi
-	ynh_print_info --message="\e[1m> Restauration du snapshot archivé pour le conteneur $name\e[0m"
-	ynh_print_info --message="Suppression du snapshot"
+	ynh_print_info --message="Restoring snapshot archive for LXC container $name"
+	ynh_print_info --message="Deleting snapshot"
 	ynh_lxc_delete_snapshot --name=$name --snapname=snap0
-	ynh_print_info --message="Décompression de l'archive"
+	ynh_print_info --message="Untar archive"
 	tar -x --acls --xattrs -f /var/lib/lxd/snapshots/$name/snap0.tar.gz -C /
 	ynh_lxc_restore_from_snapshot --name=$name
 	return $?
@@ -596,43 +596,28 @@ ynh_lxc_clone() {
 	local source
 	local destination
 	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
+	ynh_handle_getopts_args "$@"	
 
-	ynh_print_info --message="Suppression du conteneur $destination"
-	ynh_secure_remove --file="/var/lib/lxd/snapshots/$destination/snap0.tar.gz"
-	ynh_lxc_reset --name=$destination
+	if ynh_lxc_exists --name=$destination
+	then
+		ynh_print_info --message="Deleting LXC container $destination"
+		ynh_secure_remove --file="/var/lib/lxd/snapshots/$destination/snap0.tar.gz"
+		ynh_lxc_reset --name=$destination
+	fi
 
-	ynh_print_info --message="\e[1m> Clone le conteneur $source sur $destination\e[0m"
+	ynh_print_info --message="Cloning LXC container from $source to $destination"
 	lxc copy "$source" "$destination"
 
 	ynh_lxc_check_container_start --name=$destination
 	STATUS=$?
 	if [ $STATUS -eq 1 ]; then
-		ynh_print_info --message="\e[91m> LXC container $destination is broken.\e[0m"
+		ynh_print_info --message="LXC container $destination is broken."
 	else
-		ynh_print_info --message="\e[92m> LXC container $destination is working.\e[0m"
-		ynh_print_info --message= "Création d'un nouveau snapshot pour le conteneur $destination"
+		ynh_print_info --message=" LXC container $destination is working."
+		ynh_print_info --message= "Creating snapshot of LXC container $destination"
 		ynh_lxc_create_snapshot --name="$destination" --snapname="snap0"
 	fi
 	return $STATUS
-}
-
-# usage: ynh_lxc_test --name=name -
-ynh_lxc_test(){
-	# Declare an array to define the options of this helper.
-	local legacy_args=ns
-	local -A args_array=([n]=name= [s]=snapname=)
-	local name
-	local snapname
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	if ynh_lxc_exists --name=$name
-	then
-		ynh_print_info --message="$name exist"
-	else
-		ynh_print_info --message="$name does not exist"
-	fi
 }
 
 # Reset an LXC container
