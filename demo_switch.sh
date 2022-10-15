@@ -17,14 +17,14 @@ lxc_ip1=$(ynh_app_setting_get --app=$app --key=lxc_ip1)
 lxc_ip2=$(ynh_app_setting_get --app=$app --key=lxc_ip2)
 lxc_name1=$(ynh_app_setting_get --app=$app --key=lxc_name1)
 lxc_name2=$(ynh_app_setting_get --app=$app --key=lxc_name2)
-domain=${$(ynh_app_setting_get --app=$app --key=domain):-$(cat "$final_path/domain.ini")}
+domain=$(ynh_app_setting_get --app=$app --key=domain)
 path_url=$(ynh_app_setting_get --app=$app --key=path)
 
 log_line=$(wc -l "$final_path/demo_switch.log" | cut -d ' ' -f 1)	# Repère la fin du log actuel. Pour récupérer les lignes ajoutées sur cette exécution.
 log_line=$(( $log_line + 1 ))	# Ignore la première ligne, reprise de l'ancien log.
 
 date | tee -a "$final_path/demo_switch.log" 2>&1
-ynh_print_info --message=">> Switching demo." | tee -a "$final_path/demo_switch.log" 2>&1
+ynh_print_info --message=">> Start switching demo." | tee -a "$final_path/demo_switch.log" 2>&1
 
 while test -e /var/lib/lxd/$lxc_name1.lock_file* || test -e /var/lib/lxd/$lxc_name2.lock_file*; do
 	sleep 5	# Attend que le conteneur soit libéré par les script upgrade ou switch, le cas échéant.
