@@ -547,10 +547,10 @@ ynh_lxc_restore_from_snapshot () {
 	ynh_lxc_load_snapshot --name=$name --snapname=snap0
 	if ynh_lxc_check_container_start --name=$name
 	then
-		ynh_print_info --message="\e[92m> Conteneur $name en état de marche.\e[0m"
+		ynh_print_info --message="\e[92m> LXC container $name is working.\e[0m"
 		return 0
 	else
-		ynh_print_info --message="\e[91m> Conteneur $name en défaut.\e[0m"
+		ynh_print_info --message="\e[91m> LXC container $name is broken.\e[0m"
 		return 1
 	fi
 }
@@ -608,9 +608,9 @@ ynh_lxc_clone() {
 	ynh_lxc_check_container_start --name=$destination
 	STATUS=$?
 	if [ $STATUS -eq 1 ]; then
-		ynh_print_info --message="\e[91m> Conteneur $destination en défaut.\e[0m"
+		ynh_print_info --message="\e[91m> LXC container $destination is broken.\e[0m"
 	else
-		ynh_print_info --message="\e[92m> Conteneur $destination en état de marche.\e[0m"
+		ynh_print_info --message="\e[92m> LXC container $destination is working.\e[0m"
 		ynh_print_info --message= "Création d'un nouveau snapshot pour le conteneur $destination"
 		ynh_lxc_create_snapshot --name="$destination" --snapname="snap0"
 	fi

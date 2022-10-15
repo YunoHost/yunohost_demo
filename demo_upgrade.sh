@@ -17,16 +17,16 @@ lxc_name1=$(ynh_app_setting_get --app=$app --key=lxc_name1)
 lxc_name2=$(ynh_app_setting_get --app=$app --key=lxc_name2)
 time_to_switch=$(ynh_app_setting_get --app=$app --key=time_to_switch)
 
-IP_UPGRADE=$lxdbr_demo_network.150
 LOOP=0
 
 log_line=$(wc -l "$final_path/demo_upgrade.log" | cut -d ' ' -f 1)	# Repère la fin du log actuel. Pour récupérer les lignes ajoutées sur cette exécution.
 log_line=$(( $log_line + 1 ))	# Ignore la première ligne, reprise de l'ancien log.
-date >> "$final_path/demo_upgrade.log"
 
+date | tee -a "$final_path/demo_upgrade.log" 2>&1
+ynh_print_info --message=">> Upgrading demo." | tee -a "$final_path/demo_upgrade.log" 2>&1
 
-ynh_print_info --message="Starting upgrade..."
-date
 ynh_lxc_upgrade_demo  --name=$lxc_name1 --time_to_switch=$time_to_switch
 ynh_lxc_upgrade_demo  --name=$lxc_name2 --time_to_switch=$time_to_switch
-ynh_print_info --message="Upgrade finished..."
+
+date | tee -a "$final_path/demo_upgrade.log" 2>&1
+ynh_print_info --message=">> Finished upgrading demo." | tee -a "$final_path/demo_upgrade.log" 2>&1

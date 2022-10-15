@@ -17,10 +17,12 @@ lxc_ip2=$(ynh_app_setting_get --app=$app --key=lxc_ip2)
 lxc_name1=$(ynh_app_setting_get --app=$app --key=lxc_name1)
 lxc_name2=$(ynh_app_setting_get --app=$app --key=lxc_name2)
 
-ynh_print_info --message="Désactive le cron switch."
+ynh_print_info --message=">> Starting demo restore from crash."
+
+ynh_print_info --message="> Disabling switch cron."
 sed -i "s/.*demo_switch.sh/#&/" /etc/cron.d/demo_switch	# Le cron est commenté durant l'opération de maintenance.
 
-ynh_print_info --message="Suppression des lock et arrêt forcé des conteneurs."
+ynh_print_info --message="> Deleting locks and stoping LXC containers."
 ynh_secure_remove --file="/var/lib/lxd/$lxc_name1.lock_fileS"
 ynh_secure_remove --file="/var/lib/lxd/$lxc_name2.lock_fileS"
 ynh_secure_remove --file="/var/lib/lxd/$lxc_name1.lock_fileU"
@@ -36,14 +38,14 @@ ynh_lxc_check_container_start --name=$lxc_name2
 LXC2_STATUS=$?
 
 if [ $LXC1_STATUS -eq 1 ]; then
-	ynh_print_info --message="> Conteneur $lxc_name1 en défaut."
+	ynh_print_info --message="> LXC container $lxc_name1 is broken."
 else
-	ynh_print_info --message="> Conteneur $lxc_name1 en état de marche."
+	ynh_print_info --message="> LXC container $lxc_name1 is working."
 fi
 if [ $LXC2_STATUS -eq 1 ]; then
-	ynh_print_info --message="> Conteneur $lxc_name2 en défaut."
+	ynh_print_info --message="> LXC container $lxc_name2 is broken."
 else
-	ynh_print_info --message="> Conteneur $lxc_name2 en état de marche."
+	ynh_print_info --message="> LXC container $lxc_name2 is working."
 fi
 
 # Restauration des snapshots
@@ -79,16 +81,18 @@ fi
 # Résultats finaux
 if [ $LXC1_STATUS -eq 1 ] || [ $LXC2_STATUS -eq 1 ]; then
 	if [ $LXC1_STATUS -eq 1 ]; then
-		ynh_print_info --message="> Le conteneur $lxc_name1 n'a pas pu être réparé..."
+		ynh_print_info --message="> $lxc_name1 LXC container can't be repaired..."
 	fi
 	if [ $LXC2_STATUS -eq 1 ]; then
-		ynh_print_info --message="> Le conteneur $lxc_name2 n'a pas pu être réparé..."
+		ynh_print_info --message="> $lxc_name2 LXC container can't be repaired..."
 	fi
 else
-	ynh_print_info --message="> Les 2 conteneurs sont sains et fonctionnels."
+	ynh_print_info --message="> The 2 LXC containers are working."
 fi
 
-ynh_print_info --message="Réactive le cron switch."
+ynh_print_info --message="> Enabling switch cron."
 sed -i "s/#*\*/\*/" /etc/cron.d/demo_switch	# Le cron est décommenté
-ynh_print_info --message="Restart la demo."
+ynh_print_info --message="> Restart the demo."
 $final_path/demo_start.sh
+
+ynh_print_info --message=">> Finished demo restore from crash."
