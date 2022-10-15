@@ -23,7 +23,7 @@ ynh_print_info --message=">> Starting demo." | tee -a "$final_path/demo_boot.log
 # Démarrage de la machine
 ynh_print_info --message="> Démarrage de la machine" | tee -a "$final_path/demo_boot.log" 2>&1
 date | tee -a "$final_path/demo_boot.log" 2>&1
-ynh_print_info --message="Starting $lxc_name1" | tee -a "$final_path/demo_boot.log" 2>&1
+ynh_print_info --message="> Starting $lxc_name1" | tee -a "$final_path/demo_boot.log" 2>&1
 ynh_lxc_start_as_demo --name=$lxc_name1 --ip="$lxdbr_demo_network$lxc_ip1"  | tee -a "$final_path/demo_boot.log" 2>&1
 sleep 3
 

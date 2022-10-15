@@ -48,18 +48,18 @@ fi
 # Supprime les éventuels swap présents.
 /sbin/swapoff /var/lib/lxd/$LXC_A/rootfs/swap_*
 
-ynh_print_info --message="Starting $LXC_B"
+ynh_print_info --message="> Starting $LXC_B"
 # Démarre le conteneur B et arrête le conteneur A.
 ynh_lxc_start_as_demo --name=$LXC_B --ip=$IP_B
 sleep 5	# Attend 10 seconde pour s'assurer du démarrage de la machine.
 if ! ynh_lxc_is_started --name=$LXC_B
 then
 	# Le conteneur n'a pas réussi à démarrer. On averti un responsable par mail...
-	echo -e "Échec du démarrage du conteneur $LXC_B sur le serveur de demo $DOMAIN! \n\nExtrait du log:\n$(tail -n +$log_line "$final_path/demo_switch.log")\n\nLe script 'demo_restore_crash.sh' va être exécuté pour tenter de fixer l'erreur." | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
+	ynh_print_info --message="> Échec du démarrage du conteneur $LXC_B sur le serveur de demo $DOMAIN! \n\nExtrait du log:\n$(tail -n +$log_line "$final_path/demo_switch.log")\n\nLe script 'demo_restore_crash.sh' va être exécuté pour tenter de fixer l'erreur." | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
 	/bin/bash $final_path/demo_restore_crash.sh &
 	exit 1
 else
-	ynh_print_info --message="Stopping $LXC_A"
+	ynh_print_info --message="> Stopping $LXC_A"
 	# Bascule sur le conteneur B avec le load balancing de nginx...
 	# Automatique par nginx lorsque la machine A sera éteinte.
 	# Arrêt du conteneur A. Il est remplacé par le B
@@ -67,12 +67,12 @@ else
 	ynh_lxc_stop_as_demo --name=$LXC_A
 	# Supprime les éventuels swap présents.
 	/sbin/swapoff /var/lib/lxd/$LXC_A/rootfs/swap_*
-	ynh_print_info --message="Restauring $LXC_A from snapshot"
+	ynh_print_info --message="> Restauring $LXC_A from snapshot"
 	# Restaure le snapshot de la machine A avant sa prochaine exécution
 	ynh_lxc_load_snapshot --name=$LXC_A --snapname=snap0
 	ynh_lxc_stop --name=$LXC_A
 	ynh_secure_remove --file="/var/lib/lxd/$LXC_A.lock_fileS"	# Libère le lock
-	ynh_print_info --message="Finish restoring $LXC_A"
+	ynh_print_info --message="> Finish restoring $LXC_A"
 fi
 
 date | tee -a "$final_path/demo_switch.log" 2>&1

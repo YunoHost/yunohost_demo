@@ -118,7 +118,7 @@ ynh_lxc_upgrade_demo() {
 			if [ "$?" -ne 0 ]; then # Si le script a échoué, le snapshot est annulé.
 				ynh_print_info --message="Échec du script $LIGNE"
 				mv -f "$final_path/upgrade.d/$LIGNE" "$final_path/upgrade.d/$LIGNE.fail"
-				echo -e "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $name sur le serveur de demo $DOMAIN!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré.\n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_upgrade.log")" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
+				ynh_print_info --message="Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $name sur le serveur de demo $DOMAIN!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré.\n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_upgrade.log")" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
 				update_apt=0
 			else
 				ynh_print_info --message="Le script $LIGNE a été exécuté sans erreur"
@@ -138,7 +138,7 @@ ynh_lxc_upgrade_demo() {
 			/bin/bash "$final_path/upgrade.d/Constant_upgrade/$LIGNE" $name
 			if [ "$?" -ne 0 ]; then
 				ynh_print_info --message="Échec du script $LIGNE"
-				echo -e "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $name sur le serveur de demo $DOMAIN!\n"
+				ynh_print_info --message="Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $name sur le serveur de demo $DOMAIN!\n"
 			else
 				ynh_print_info --message="Le script $LIGNE a été exécuté sans erreur"
 			fi

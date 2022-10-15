@@ -34,10 +34,10 @@ ynh_secure_remove --file=/etc/cron.d/demo_upgrade
 ynh_print_info --message="> Deleting service"
 if ynh_exec_warn_less yunohost service status $app >/dev/null
 then
-	ynh_print_info --message="Removing $app service integration..."
+	ynh_print_info --message="> Removing $app service integration..."
 	yunohost service remove $app
 fi
-ynh_print_info --message="Stopping and removing the systemd service..."
+ynh_print_info --message="> Stopping and removing the systemd service..."
 ynh_remove_systemd_config
 
 ynh_print_info --message=">> Finished demo destroy."

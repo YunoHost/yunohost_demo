@@ -36,7 +36,7 @@ if ynh_lxc_exists --name=$lxc_name1
 then
 	if ! ynh_lxc_is_stopped --name=$lxc_name1
 	then
-		ynh_print_info --message="Stopping $lxc_name1 LXC container" | tee -a "$final_path/demo_boot.log" 2>&1
+		ynh_print_info --message="> Stopping $lxc_name1 LXC container" | tee -a "$final_path/demo_boot.log" 2>&1
 		ynh_lxc_stop_as_demo --name=$lxc_name1
 	fi
 fi
@@ -44,7 +44,7 @@ if ynh_lxc_exists --name=$lxc_name2
 then
 	if ! ynh_lxc_is_stopped --name=$lxc_name2
 	then
-		ynh_print_info --message="Stopping $lxc_name2 LXC container"
+		ynh_print_info --message="> Stopping $lxc_name2 LXC container"
 		ynh_lxc_stop_as_demo --name=$lxc_name2
 	fi
 fi
