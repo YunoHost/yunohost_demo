@@ -336,7 +336,7 @@ ynh_lxc_create(){
 		log_critical "Can't find base image $image"
 	fi
 	
-	if [ ! -z "$PACKAGE_CHECK_EXEC" ]
+	if [ ! -z "$FOR_PACKAGE_CHECK" ]
 	then
 		pipestatus="${PIPESTATUS[0]}"
 		location=$(ynh_exec_as $app lxc list --format json | jq -e --arg name $name '.[] | select(.name==$name) | .location' | tr -d '"')
@@ -346,7 +346,7 @@ ynh_lxc_create(){
 	fi
 
 	_ynh_lxc_start_and_wait --name="$name"
-	if [ ! -z "$PACKAGE_CHECK_EXEC" ]
+	if [ ! -z "$FOR_PACKAGE_CHECK" ]
 	then
 		ynh_lxc_set_witness --name="$name"
 	fi
@@ -446,7 +446,7 @@ ynh_lxc_create_snapshot() {
 
 	ynh_lxc_start_timer
 	
-	if [ ! -z "$PACKAGE_CHECK_EXEC" ]
+	if [ ! -z "$FOR_PACKAGE_CHECK" ]
 	then
 		# Check all the witness files, to verify if them still here
 		ynh_lxc_check_witness >&2
@@ -798,6 +798,8 @@ ynh_lxc_stop_timer() {
 #=================================================
 # PACKAGE_CHECK helpers
 #=================================================
+
+# ynh_lxd commands have to be launch with FOR_PACKAGE_CHECK=1
 
 # Start an LXC and execute a command in it, to be used for PACKAGE_CHECK_EXEC
 #
