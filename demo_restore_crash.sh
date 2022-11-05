@@ -6,6 +6,7 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
 source /usr/share/yunohost/helpers
 
 app=${__APP__:-yunohost_demo}
@@ -27,8 +28,8 @@ ynh_secure_remove --file="/var/lib/lxd/$lxc_name2.lock_fileS"
 ynh_secure_remove --file="/var/lib/lxd/$lxc_name1.lock_fileU"
 ynh_secure_remove --file="/var/lib/lxd/$lxc_name2.lock_fileU"
 
-ynh_lxc_stop_as_demo --name="$lxc_name1"
-ynh_lxc_stop_as_demo --name="$lxc_name2"
+ynh_lxc_demo_stop --name="$lxc_name1"
+ynh_lxc_demo_stop --name="$lxc_name2"
 
 # Vérifie l'état des conteneurs.
 ynh_lxc_check_container_start --name=$lxc_name1
@@ -49,21 +50,21 @@ fi
 
 # Restauration des snapshots
 if [ $LXC1_STATUS -eq 1 ]; then
-	ynh_lxc_restore_from_snapshot  --name=$lxc_name1
+	ynh_lxc_demo_restore_from_snapshot  --name=$lxc_name1
 	LXC1_STATUS=$?
 fi
 if [ $LXC2_STATUS -eq 1 ]; then
-	ynh_lxc_restore_from_snapshot  --name=$lxc_name2
+	ynh_lxc_demo_restore_from_snapshot  --name=$lxc_name2
 	LXC2_STATUS=$?
 fi
 
 # Restauration des archives des snapshots
 if [ $LXC1_STATUS -eq 1 ]; then
-	ynh_lxc_restore_from_archive  --name=$lxc_name1
+	ynh_lxc_demo_restore_from_archive  --name=$lxc_name1
 	LXC1_STATUS=$?
 fi
 if [ $LXC2_STATUS -eq 1 ]; then
-	ynh_lxc_restore_from_archive  --name=$lxc_name2
+	ynh_lxc_demo_restore_from_archive  --name=$lxc_name2
 	LXC2_STATUS=$?
 fi
 

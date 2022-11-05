@@ -6,6 +6,7 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
 source /usr/share/yunohost/helpers
 
 app=${__APP__:-yunohost_demo}
@@ -23,7 +24,7 @@ ynh_print_info --message=">> Starting demo." | tee -a "$final_path/demo_boot.log
 ynh_print_info --message="> Démarrage de la machine" | tee -a "$final_path/demo_boot.log" 2>&1
 date | tee -a "$final_path/demo_boot.log" 2>&1
 ynh_print_info --message="> Starting $lxc_name1" | tee -a "$final_path/demo_boot.log" 2>&1
-ynh_lxc_start_as_demo --name=$lxc_name1 --ip="$lxdbr_demo_network$lxc_ip1"  | tee -a "$final_path/demo_boot.log" 2>&1
+ynh_lxc_demo_start --name=$lxc_name1 --ip="$lxdbr_demo_network$lxc_ip1"  | tee -a "$final_path/demo_boot.log" 2>&1
 sleep 3
 
 date | tee -a "$final_path/demo_boot.log" 2>&1

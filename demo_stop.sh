@@ -6,6 +6,7 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(ynh_print_info --message=$PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
 source /usr/share/yunohost/helpers
 
 app=${__APP__:-yunohost_demo}
@@ -36,7 +37,7 @@ then
 	if ! ynh_lxc_is_stopped --name=$lxc_name1
 	then
 		ynh_print_info --message="> Stopping $lxc_name1 LXC container" | tee -a "$final_path/demo_boot.log" 2>&1
-		ynh_lxc_stop_as_demo --name=$lxc_name1
+		ynh_lxc_demo_stop --name=$lxc_name1
 	fi
 fi
 if ynh_lxc_exists --name=$lxc_name2
@@ -44,7 +45,7 @@ then
 	if ! ynh_lxc_is_stopped --name=$lxc_name2
 	then
 		ynh_print_info --message="> Stopping $lxc_name2 LXC container"
-		ynh_lxc_stop_as_demo --name=$lxc_name2
+		ynh_lxc_demo_stop --name=$lxc_name2
 	fi
 fi
 

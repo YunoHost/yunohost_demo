@@ -7,6 +7,7 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
 source /usr/share/yunohost/helpers
 
 app=${__APP__:-yunohost_demo}
@@ -24,8 +25,8 @@ log_line=$(( $log_line + 1 ))	# Ignore la première ligne, reprise de l'ancien l
 date | tee -a "$final_path/demo_upgrade.log" 2>&1
 ynh_print_info --message=">> Upgrading demo." | tee -a "$final_path/demo_upgrade.log" 2>&1
 
-ynh_lxc_upgrade_demo  --name=$lxc_name1 --time_to_switch=$time_to_switch
-ynh_lxc_upgrade_demo  --name=$lxc_name2 --time_to_switch=$time_to_switch
+ynh_lxc_demo_upgrade  --name=$lxc_name1 --time_to_switch=$time_to_switch
+ynh_lxc_demo_upgrade  --name=$lxc_name2 --time_to_switch=$time_to_switch
 
 date | tee -a "$final_path/demo_upgrade.log" 2>&1
 ynh_print_info --message=">> Finished upgrading demo." | tee -a "$final_path/demo_upgrade.log" 2>&1

@@ -6,6 +6,7 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
 source /usr/share/yunohost/helpers
 
 app=${__APP__:-yunohost_demo}
@@ -41,7 +42,7 @@ then
 fi
 
 ynh_print_info --message="> Creating a YunoHost $DIST $ARCH $YNH_BRANCH" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_lxc_create --image="$lxc_base" --name="$lxc_name1" | tee -a "$LOG_BUILD_LXC" 2>&1
+ynh_lxc_launch --image="$lxc_base" --name="$lxc_name1" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message= "> Creating the $lxdbr_demo_name bridge" | tee -a "$LOG_BUILD_LXC" 2>&1
 lxc network attach $lxdbr_demo_name $lxc_name1 eth1 eth1 | tee -a "$LOG_BUILD_LXC" 2>&1
@@ -149,17 +150,17 @@ fi
 # ********
 
 ynh_print_info --message="> Creating a snapshot for $lxc_name1" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_lxc_create_snapshot --name="$lxc_name1" --snapname="snap0"
+ynh_lxc_snapshot_create --name="$lxc_name1" --snapname="snap0"
 
 ynh_print_info --message="> Upgrading the $lxc_name1 LXC container" | tee -a "$LOG_BUILD_LXC" 2>&1
 ynh_lxc_stop --name="$lxc_name1" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_lxc_upgrade_demo --name=$lxc_name1 --time_to_switch=$time_to_switch | tee -a "$LOG_BUILD_LXC" 2>&1
+ynh_lxc_demo_upgrade --name=$lxc_name1 --time_to_switch=$time_to_switch | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> Cloning $lxc_name1 to $lxc_name2" | tee -a "$LOG_BUILD_LXC" 2>&1
 ynh_lxc_clone --source="$lxc_name1" --destination="$lxc_name2" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> Creating a snapshot for $lxc_name2" | tee -a "$LOG_BUILD_LXC" 2>&1
-ynh_lxc_create_snapshot --name="$lxc_name2" --snapname="snap0" | tee -a "$LOG_BUILD_LXC" 2>&1
+ynh_lxc_snapshot_create --name="$lxc_name2" --snapname="snap0" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 ynh_print_info --message="> Setuping the switch cron" | tee -a "$LOG_BUILD_LXC" 2>&1
 ynh_add_config --template="$final_path/conf/cron_demo_switch" --destination="/etc/cron.d/demo_switch" | tee -a "$LOG_BUILD_LXC" 2>&1

@@ -10,7 +10,7 @@
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_exists() {
+ynh_lxc_exists () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -32,7 +32,7 @@ ynh_lxc_exists() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_status() {
+ynh_lxc_status () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -52,7 +52,7 @@ ynh_lxc_status() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_is_started() {
+ynh_lxc_is_started () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -74,7 +74,7 @@ ynh_lxc_is_started() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_is_stopped() {
+ynh_lxc_is_stopped () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -96,7 +96,7 @@ ynh_lxc_is_stopped() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_start() {
+ynh_lxc_start () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -120,7 +120,7 @@ ynh_lxc_start() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_stop() {
+ynh_lxc_stop () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -166,7 +166,7 @@ ynh_lxc_stop() {
 # | arg: -c, --command=		- command to execute
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_run_inside() {
+ynh_lxc_run_inside () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=nc
 	local -A args_array=([n]=name= [c]=command=)
@@ -184,7 +184,7 @@ ynh_lxc_run_inside() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_check_container_start() {
+ynh_lxc_check_container_start () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -211,11 +211,11 @@ ynh_lxc_check_container_start() {
 
 # Restart a container
 #
-# usage: _ynh_restart_container --name=name
+# usage: _ynh_lxc_restart_container --name=name
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-_ynh_restart_container() {
+_ynh_lxc_restart_container () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -223,8 +223,8 @@ _ynh_restart_container() {
 	# Manage arguments with getopts
 	ynh_handle_getopts_args "$@"
 
-	ynh_lxc_stop --name="$name"
-	ynh_lxc_start --name="$name"
+	ynh_lxc_stop --name=$name
+	ynh_lxc_start --name=$name
 }
 
 # Keep sure the LXC is started
@@ -233,7 +233,7 @@ _ynh_restart_container() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-_ynh_lxc_start_and_wait() {
+_ynh_lxc_start_and_wait () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -253,7 +253,8 @@ _ynh_lxc_start_and_wait() {
 		# Wait for container to start, we are using systemd to check this,
 		# for the sake of brevity.
 		for j in $(seq 1 10); do
-			if ynh_lxc_run_inside --name=$name --command="systemctl isolate multi-user.target >/dev/null 2>/dev/null"; then
+			if ynh_lxc_run_inside --name=$name --command="systemctl isolate multi-user.target >/dev/null 2>/dev/null"
+			then
 				break
 			fi
 
@@ -261,7 +262,7 @@ _ynh_lxc_start_and_wait() {
 				log_debug 'Failed to start the container ... restarting ...'
 				failstart=1
 
-				_ynh_restart_container --name="$name"
+				_ynh_lxc_restart_container --name="$name"
 			fi
 
 			sleep 1s
@@ -269,7 +270,8 @@ _ynh_lxc_start_and_wait() {
 
 		# Wait for container to access the internet
 		for j in $(seq 1 10); do
-			if ynh_lxc_run_inside --name=$name --command="curl -s http://wikipedia.org > /dev/null 2>/dev/null"; then
+			if ynh_lxc_run_inside --name=$name --command="curl -s http://wikipedia.org > /dev/null 2>/dev/null"
+			then
 				break
 			fi
 
@@ -277,7 +279,7 @@ _ynh_lxc_start_and_wait() {
 				log_debug 'Failed to access the internet ... restarting'
 				failstart=1
 
-				_ynh_restart_container --name="$name"
+				_ynh_lxc_restart_container --name="$name"
 			fi
 
 			sleep 1s
@@ -301,14 +303,14 @@ _ynh_lxc_start_and_wait() {
 	LXC_IP=$(ynh_lxc_run_inside --name=$name --command="hostname -I | cut -d' ' -f1 | grep -E -o \"\<[0-9.]{8,}\>\"")
 }
 
-# Create a new LXC from an image
+# Launch a new LXC from an image
 #
-# usage: ynh_lxc_create --image=image --name=name
+# usage: ynh_lxc_launch --image=image --name=name
 # | arg: -i, --image=	- image to create from
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_create(){
+ynh_lxc_launch (){
 	# Declare an array to define the options of this helper.
 	local legacy_args=in
 	local -A args_array=([i]=image= [n]=name=)
@@ -317,17 +319,15 @@ ynh_lxc_create(){
 	# Manage arguments with getopts
 	ynh_handle_getopts_args "$@"
 
-	log_info "Launching new LXC $name ..."
-	# Check if we can launch container from YunoHost remote image
-	if ynh_exec_as $app lxc remote list | grep -q "yunohost" && ynh_exec_as $app lxc image list yunohost:$image | grep -q -w $image; then
-		ynh_exec_as $app lxc launch yunohost:$image $name \
+	if lxc remote list | grep -q "yunohost" && lxc image list yunohost:$image | grep -q -w $image; then
+		lxc launch yunohost:$image $name \
 			-c security.nesting=true \
 			-c security.privileged=true \
 			-c limits.memory=80% \
 			-c limits.cpu.allowance=80%  | tee -a /proc/self/fd/3
 	# Check if we can launch container from a local image
-	elif ynh_exec_as $app lxc image list $image | grep -q -w $image; then
-		ynh_exec_as $app lxc launch $image $name \
+	elif lxc image list $image | grep -q -w $image; then
+		lxc launch $image $name \
 			-c security.nesting=true \
 			-c security.privileged=true \
 			-c limits.memory=80% \
@@ -335,22 +335,6 @@ ynh_lxc_create(){
 	else
 		log_critical "Can't find base image $image"
 	fi
-	
-	if [ ! -z "$FOR_PACKAGE_CHECK" ]
-	then
-		pipestatus="${PIPESTATUS[0]}"
-		location=$(ynh_exec_as $app lxc list --format json | jq -e --arg name $name '.[] | select(.name==$name) | .location' | tr -d '"')
-		[[ "$location" != "none" ]] && log_info "... on $location"
-
-		[[ "$pipestatus" -eq 0 ]] || exit 1
-	fi
-
-	_ynh_lxc_start_and_wait --name="$name"
-	if [ ! -z "$FOR_PACKAGE_CHECK" ]
-	then
-		ynh_lxc_set_witness --name="$name"
-	fi
-	ynh_lxc_create_snapshot --name="$name" --snapname="snap0"
 }
 
 # Delete a lxc container
@@ -359,7 +343,7 @@ ynh_lxc_create(){
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_delete() {
+ynh_lxc_delete () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -377,11 +361,11 @@ ynh_lxc_delete() {
 
 # Clean the swapfiles of an LXC container
 #
-# usage: ynh_lxc_clean_swapfiles --name=name
+# usage: ynh_lxc_swapfiles_clean --name=name
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_clean_swapfiles() {
+ynh_lxc_swapfiles_clean () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -389,7 +373,7 @@ ynh_lxc_clean_swapfiles() {
 	# Manage arguments with getopts
 	ynh_handle_getopts_args "$@"
 
-	_ynh_lxc_start_and_wait --name="$name"
+	_ynh_lxc_start_and_wait --name=$name
 
 	ynh_lxc_run_inside --name=$name --command='for swapfile in $(ls /swap_* 2>/dev/null); do swapoff $swapfile; done'
 	ynh_lxc_run_inside --name=$name --command='for swapfile in $(ls /swap_* 2>/dev/null); do rm -f $swapfile; done'
@@ -402,7 +386,7 @@ ynh_lxc_clean_swapfiles() {
 # | arg: -s, --snapname=	- name of the snapshot
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_snapshot_exists() {
+ynh_lxc_snapshot_exists () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=ns
 	local -A args_array=([n]=name= [s]=snapname=)
@@ -430,12 +414,12 @@ ynh_lxc_snapshot_exists() {
 
 # Create a snapshot of an LXC container
 #
-# usage: ynh_lxc_create_snapshot --name=name --snapname=snapname
+# usage: ynh_lxc_snapshot_create --name=name --snapname=snapname
 # | arg: -n, --name=		- name of the LXC
 # | arg: -s, --snapname=	- name of the snapshot
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_create_snapshot() {
+ynh_lxc_snapshot_create () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=ns
 	local -A args_array=([n]=name= [s]=snapname=)
@@ -444,21 +428,13 @@ ynh_lxc_create_snapshot() {
 	# Manage arguments with getopts
 	ynh_handle_getopts_args "$@"
 
-	ynh_lxc_start_timer
-	
-	if [ ! -z "$FOR_PACKAGE_CHECK" ]
-	then
-		# Check all the witness files, to verify if them still here
-		ynh_lxc_check_witness >&2
-	fi
-
 	# Remove swap files to avoid killing the CI with huge snapshots.
-	ynh_lxc_clean_swapfiles --name="$name"
+	ynh_lxc_swapfiles_clean --name=$name
 	
-	ynh_lxc_stop --name="$name"
+	ynh_lxc_stop --name=$name
 
 	# Check if the snapshot already exist
-	if ! ynh_lxc_snapshot_exists --name="$name" --snapname="$snapname"
+	if ! ynh_lxc_snapshot_exists --name=$name --snapname="$snapname"
 	then
 		log_info "(Creating snapshot $snapname ...)"
 		lxc snapshot $name $snapname
@@ -466,20 +442,16 @@ ynh_lxc_create_snapshot() {
 		log_info "(Recreating snapshot $snapname ...)"
 		lxc snapshot $name $snapname --reuse
 	fi
-
-	_ynh_lxc_start_and_wait --name="$name"
-
-	ynh_lxc_stop_timer 1
 }
 
 # Delete a snapshot of an LXC container
 #
-# usage: ynh_lxc_delete_snapshot --name=name --snapname=snapname
+# usage: ynh_lxc_snapshot_delete --name=name --snapname=snapname
 # | arg: -n, --name=		- name of the LXC
 # | arg: -s, --snapname=	- name of the snapshot
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_delete_snapshot() {
+ynh_lxc_snapshot_delete () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=ns
 	local -A args_array=([n]=name= [s]=snapname=)
@@ -499,12 +471,12 @@ ynh_lxc_delete_snapshot() {
 
 # Load a snapshot of an LXC container
 #
-# usage: ynh_lxc_load_snapshot --name=name --snapname=snapname
+# usage: ynh_lxc_snapshot_load --name=name --snapname=snapname
 # | arg: -n, --name=		- name of the LXC
 # | arg: -s, --snapname=	- name of the snapshot
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_load_snapshot() {
+ynh_lxc_snapshot_load () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=ns
 	local -A args_array=([n]=name= [s]=snapname=)
@@ -518,68 +490,15 @@ ynh_lxc_load_snapshot() {
 		log_debug "Loading snapshot $snapname ..."
 
 		# Remove swap files before restoring the snapshot.
-		ynh_lxc_clean_swapfiles --name="$name"
+		ynh_lxc_swapfiles_clean --name=$name
 
-		ynh_lxc_stop --name="$name"
+		ynh_lxc_stop --name=$name
 
 		lxc restore $name $snapname
-		_ynh_lxc_start_and_wait --name="$name"
+		_ynh_lxc_start_and_wait --name=$name
 	else
 		return 1
 	fi
-}
-
-# Restore an LXC container from snap0 snapshot
-#
-# usage: ynh_lxc_restore_from_snapshot --name=name
-# | arg: -n, --name=	- name of the LXC
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_restore_from_snapshot () {
-	# Declare an array to define the options of this helper.
-	local legacy_args=n
-	local -A args_array=([n]=name=)
-	local name
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	ynh_print_info --message="Restoring LXC container $name from snapshot"
-	ynh_lxc_load_snapshot --name=$name --snapname=snap0
-	if ynh_lxc_check_container_start --name=$name
-	then
-		ynh_print_info --message="LXC container $name is working."
-		return 0
-	else
-		ynh_print_info --message="LXC container $name is broken."
-		return 1
-	fi
-}
-
-# Restore an LXC container from an archive
-#
-# usage: ynh_lxc_restore_from_archive --name=name
-# | arg: -n, --name=	- name of the LXC
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_restore_from_archive () {
-	# Declare an array to define the options of this helper.
-	local legacy_args=n
-	local -A args_array=([n]=name=)
-	local name
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	if ! test -e "/var/lib/lxd/snapshots/$name/snap1.tar.gz"; then
-		ynh_print_info --message="No snapshot archive for LXC container $name"
-		return 1
-	fi
-	ynh_print_info --message="Restoring snapshot archive for LXC container $name"
-	ynh_print_info --message="Deleting snapshot"
-	ynh_lxc_delete_snapshot --name=$name --snapname=snap0
-	ynh_print_info --message="Untar archive"
-	tar -x --acls --xattrs -f /var/lib/lxd/snapshots/$name/snap0.tar.gz -C /
-	ynh_lxc_restore_from_snapshot --name=$name
-	return $?
 }
 
 # Clone an LXC container
@@ -589,7 +508,7 @@ ynh_lxc_restore_from_archive () {
 # | arg: -d, --destination=	 - destination LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_clone() {
+ynh_lxc_clone () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=sd
 	local -A args_array=([s]=source= [d]=destination=)
@@ -615,7 +534,7 @@ ynh_lxc_clone() {
 	else
 		ynh_print_info --message=" LXC container $destination is working."
 		ynh_print_info --message= "Creating snapshot of LXC container $destination"
-		ynh_lxc_create_snapshot --name="$destination" --snapname="snap0"
+		ynh_lxc_snapshot_create --name="$destination" --snapname="snap0"
 	fi
 	return $STATUS
 }
@@ -626,7 +545,7 @@ ynh_lxc_clone() {
 # | arg: -n, --name=	- name of the LXC
 #
 # Requires YunoHost version *.*.* or higher.
-ynh_lxc_reset() {
+ynh_lxc_reset () {
 	# Declare an array to define the options of this helper.
 	local legacy_args=n
 	local -A args_array=([n]=name=)
@@ -637,508 +556,11 @@ ynh_lxc_reset() {
 	# If the container exists
 	if ynh_lxc_exists --name=$name
 	then
-		# Remove swap files before deletting the continer
-		ynh_lxc_clean_swapfiles --name="$name"
-		ynh_lxc_stop --name="$name"
+		# Remove swap files before deleting the container
+		ynh_lxc_swapfiles_clean --name=$name
+		ynh_lxc_stop --name=$name
 		local current_storage=$(lxc list $name --format json --columns b | jq '.[].expanded_devices.root.pool')
 		swapoff "$(lxc storage get $current_storage source)/containers/$name/rootfs/swap" 2>/dev/null
 		ynh_lxc_delete --name=$name
 	fi 
-}
-
-#=================================================
-# LOGGING HELPERS
-#=================================================
-
-readonly NORMAL=$(printf '\033[0m')
-readonly BOLD=$(printf '\033[1m')
-readonly faint=$(printf '\033[2m')
-readonly UNDERLINE=$(printf '\033[4m')
-readonly NEGATIVE=$(printf '\033[7m')
-readonly RED=$(printf '\033[31m')
-readonly GREEN=$(printf '\033[32m')
-readonly ORANGE=$(printf '\033[33m')
-readonly BLUE=$(printf '\033[34m')
-readonly YELLOW=$(printf '\033[93m')
-readonly WHITE=$(printf '\033[39m')
-
-function log_title()
-{
-	cat << EOF | tee -a /proc/self/fd/3
-${BOLD}
- ============================================
- $1
- ============================================
-${NORMAL}
-EOF
-}
-
-function log_small_title()
-{
-	echo -e "\n${BOLD} > ${1}${NORMAL}\n" | tee -a /proc/self/fd/3
-}
-
-
-function log_debug()
-{
-	echo "$1" | tee -a /proc/self/fd/3
-}
-
-function log_info()
-{
-	echo "${1}" | tee -a /proc/self/fd/3
-}
-
-function log_success()
-{
-	echo "${BOLD}${GREEN}Success: ${1}${NORMAL}" | tee -a /proc/self/fd/3
-}
-
-function log_warning()
-{
-	echo "${BOLD}${ORANGE}Warning: ${1}${NORMAL}" | tee -a /proc/self/fd/3
-}
-
-function log_error()
-{
-	echo "${BOLD}${RED}Error: ${1}${NORMAL}" | tee -a /proc/self/fd/3
-}
-
-function log_critical()
-{
-	echo "${BOLD}${RED}Critical: ${1}${NORMAL}" | tee -a /proc/self/fd/3
-	exit 1
-}
-
-function log_report_test_success () {
-	echo -e "\n${BOLD}${GREEN}--- SUCCESS ---${NORMAL}\n" | tee -a /proc/self/fd/3
-}
-
-function log_report_test_warning () {
-	echo -e "\n${BOLD}${ORANGE}--- WARNING ---${NORMAL}\n" | tee -a /proc/self/fd/3
-}
-
-function log_report_test_failed () {
-	echo -e "\n${BOLD}${RED}--- FAIL ---${NORMAL}\n" | tee -a /proc/self/fd/3
-}
-
-#=================================================
-# TIMING HELPERS
-#=================================================
-
-# Start a timer
-#
-# usage: ynh_lxc_start_timer
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_start_timer() {
-	# Set the beginning of the timer
-	starttime=$(date +%s)
-}
-
-# Stop a timer
-#
-# usage: ynh_lxc_stop_timer
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_stop_timer() {
-	# Ending the timer
-	# $1 = Type of querying
-
-	local finishtime=$(date +%s)
-	# Calculate the gap between the starting and the ending of the timer
-	local elapsedtime=$(echo $(( $finishtime - $starttime )))
-	# Extract the number of hour
-	local hours=$(echo $(( $elapsedtime / 3600 )))
-	local elapsedtime=$(echo $(( $elapsedtime - ( 3600 * $hours) )))
-	# Minutes
-	local minutes=$(echo $(( $elapsedtime / 60 )))
-	# And seconds
-	local seconds=$(echo $(( $elapsedtime - ( 60 * $minutes) )))
-
-	local phours=""
-	local pminutes=""
-	local pseconds=""
-
-	# Avoid null values
-	[ $hours -eq 0 ] || phours="$hours hour"
-	[ $minutes -eq 0 ] || pminutes="$minutes minute"
-	[ $seconds -eq 0 ] || pseconds="$seconds second"
-
-	# Add a 's' for plural values
-	[ $hours -eq 1 ] && phours="${phours}, " || test -z "$phours" || phours="${phours}s, "
-	[ $minutes -eq 1 ] && pminutes="${pminutes}, " || test -z "$pminutes" || pminutes="${pminutes}s, "
-	[ $seconds -gt 1 ] && pseconds="${pseconds}s" || pseconds="0s"
-
-	local time="${phours}${pminutes}${pseconds} ($(date '+%T'))"
-	if [ $1 -eq 2 ]; then
-		log_info "Working time for this test: $time"
-	elif [ $1 -eq 3 ]; then
-		log_info "Global working time for all tests: $time"
-	else
-		log_debug "Working time: $time"
-	fi
-}
-
-#=================================================
-# PACKAGE_CHECK HELPERS
-#=================================================
-
-# ynh_lxd commands have to be launch with FOR_PACKAGE_CHECK=1
-
-# Start an LXC and execute a command in it, to be used for PACKAGE_CHECK_EXEC
-#
-# usage: ynh_lxc_exec --name=name --command=command
-# | arg: -n, --name=		- name of the LXC
-# | arg: -c, --command=		- command to execute
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_exec() {
-	# Declare an array to define the options of this helper.
-	local legacy_args=nc
-	local -A args_array=([n]=name= [c]=command=)
-	local name
-	local command
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	_ynh_lxc_start_and_wait --name="$name"
-
-	ynh_lxc_start_timer
-
-	# Execute the command given in argument in the container and log its results.
-	lxc exec $name --env PACKAGE_CHECK_EXEC=1 -t -- /bin/bash -c "$command"
-
-	# Store the return code of the command
-	local returncode=${PIPESTATUS[0]}
-
-	log_debug "Return code: $returncode"
-
-	ynh_lxc_stop_timer 1
-	# Return the exit code of the ssh command
-	return $returncode
-}
-
-# Create a witness in an LXC container
-#
-# usage: ynh_lxc_create_witness --name=name --witness=witness --type=type
-# | arg: -n, --name=		- name of the LXC
-# | arg: -w, --witness=		- witness to create
-# | arg: -t, --type=		- type of witness, can be file or directory
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_create_witness () {
-	# Declare an array to define the options of this helper.
-	local legacy_args=nwt
-	local -A args_array=([n]=name= [w]=witness= [t]=type=)
-	local name
-	local witness
-	local type
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	[ "$type" = "file" ] && local action="touch" || local action="mkdir -p"
-	ynh_lxc_run_inside --name=$name --command="$action $witness"
-}
-
-# Set witness in an LXC container
-#
-# usage: ynh_lxc_set_witness --name=name
-# | arg: -n, --name=	- name of the LXC
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_set_witness() {
-	# Declare an array to define the options of this helper.
-	local legacy_args=n
-	local -A args_array=([n]=name=)
-	local name
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	# Create files to check if the remove script does not remove them accidentally
-	log_debug "Create witness files..."
-
-	# Nginx conf
-	ynh_lxc_create_witness -name=$name --witness="/etc/nginx/conf.d/$DOMAIN.d/witnessfile.conf" --type=file
-	ynh_lxc_create_witness -name=$name --witness="/etc/nginx/conf.d/$SUBDOMAIN.d/witnessfile.conf" --type=file
-
-	# /etc
-	ynh_lxc_create_witness -name=$name --witness="/etc/witnessfile" --type=file
-
-	# /opt directory
-	ynh_lxc_create_witness -name=$name --witness="/opt/witnessdir" --type=directory
-
-	# /var/www directory
-	ynh_lxc_create_witness -name=$name --witness="/var/www/witnessdir" --type=directory
-
-	# /home/yunohost.app/
-	ynh_lxc_create_witness -name=$name --witness="/home/yunohost.app/witnessdir" --type=directory
-
-	# /var/log
-	ynh_lxc_create_witness -name=$name --witness="/var/log/witnessfile" --type=file
-
-	# Config fpm
-	ynh_lxc_create_witness -name=$name --witness="/etc/php/$DEFAULT_PHP_VERSION/fpm/pool.d/witnessfile.conf" --type=file
-
-	# Config logrotate
-	ynh_lxc_create_witness -name=$name --witness="/etc/logrotate.d/witnessfile" --type=file
-
-	# Config systemd
-	ynh_lxc_create_witness -name=$name --witness="/etc/systemd/system/witnessfile.service" --type=file
-
-	# Database
-	ynh_lxc_run_inside --name=$name --command="mysqladmin --wait status > /dev/null 2>&1"
-	ynh_lxc_run_inside --name=$name --command="echo \"CREATE DATABASE witnessdb\" | mysql --wait > /dev/null 2>&1"
-}
-
-# Check if a witness exists in an LXC container
-#
-# usage: ynh_lxc_create_witness --name=name --witness=witness
-# | arg: -n, --name=		- name of the LXC
-# | arg: -w, --witness=		- witness to create
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_check_witness_exist () {
-	# Declare an array to define the options of this helper.
-	local legacy_args=nw
-	local -A args_array=([n]=name= [w]=witness=)
-	local name
-	local witness
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	if ynh_lxc_run_inside --name=$name --command="test ! -e \"$witness\""
-	then
-		log_error "The file $witness is missing ! Something gone wrong !"
-		SET_RESULT "failure" witness
-	fi
-}
-	
-# Check witness in an LXC container
-#
-# usage: ynh_lxc_check_witness --name=name
-# | arg: -n, --name=	- name of the LXC
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_check_witness() {
-	# Declare an array to define the options of this helper.
-	local legacy_args=n
-	local -A args_array=([n]=name=)
-	local name
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	# Check all the witness files, to verify if them still here
-
-	# Nginx conf
-	ynh_lxc_check_witness_exist --name=$name --witness="/etc/nginx/conf.d/$DOMAIN.d/witnessfile.conf"
-	ynh_lxc_check_witness_exist --name=$name --witness="/etc/nginx/conf.d/$SUBDOMAIN.d/witnessfile.conf"
-
-	# /etc
-	ynh_lxc_check_witness_exist --name=$name --witness="/etc/witnessfile"
-
-	# /opt directory
-	ynh_lxc_check_witness_exist --name=$name --witness="/opt/witnessdir"
-
-	# /var/www directory
-	ynh_lxc_check_witness_exist --name=$name --witness="/var/www/witnessdir"
-
-	# /home/yunohost.app/
-	ynh_lxc_check_witness_exist --name=$name --witness="/home/yunohost.app/witnessdir"
-
-	# /var/log
-	ynh_lxc_check_witness_exist --name=$name --witness="/var/log/witnessfile"
-
-	# Config fpm
-	ynh_lxc_check_witness_exist --name=$name --witness="/etc/php/$DEFAULT_PHP_VERSION/fpm/pool.d/witnessfile.conf"
-
-	# Config logrotate
-	ynh_lxc_check_witness_exist --name=$name --witness="/etc/logrotate.d/witnessfile"
-
-	# Config systemd
-	ynh_lxc_check_witness_exist --name=$name --witness="/etc/systemd/system/witnessfile.service"
-
-	# Database
-	if ! ynh_lxc_run_inside --name=$name --command="mysqlshow witnessdb > /dev/null 2>&1"
-	then
-		log_error "The database witnessdb is missing ! Something gone wrong !"
-		SET_RESULT "failure" witness
-		return 1
-	fi
-}
-
-#=================================================
-# DEMO HELPERS
-#=================================================
-
-# Start an LXC container in demo mode
-#
-# usage: ynh_lxc_start_as_demo --name=name --ip=ip
-# | arg: -n, --name=	- name of the LXC
-# | arg: -n, --ip=		- demo ip of the lxc
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_start_as_demo() {
-	# Declare an array to define the options of this helper.
-	local legacy_args=ni
-	local -A args_array=([n]=name= [i]=ip=)
-	local name
-	local ip
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	ynh_lxc_stop --name="$name"
-	lxc config device set $name eth1 ipv4.address $ip
-	_ynh_lxc_start_and_wait --name="$name"
-}
-
-# Stop an LXC container in demo mode
-#
-# usage: ynh_lxc_stop_as_demo --name=name
-# | arg: -n, --name=	- name of the LXC
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_stop_as_demo() {
-	# Declare an array to define the options of this helper.
-	local legacy_args=n
-	local -A args_array=([n]=name=)
-	local name
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	ynh_lxc_stop --name="$name"
-	lxc config device unset $name eth1 ipv4.address
-}
-
-# Upgrading demo container
-#
-# usage: ynh_lxc_upgrade_demo --name=name --time_to_switch=time_to_switch
-# | arg: -n, --name=			- name of the LXC
-# | arg: -t, --time_to_switch=  - time to switch
-#
-# Requires YunoHost version *.*.* or higher.
-ynh_lxc_upgrade_demo() {
-	# Declare an array to define the options of this helper.
-	local legacy_args=nt
-	local -A args_array=([n]=name= [t]=time_to_switch=)
-	local name
-	local time_to_switch
-	# Manage arguments with getopts
-	ynh_handle_getopts_args "$@"
-
-	ynh_print_info --message="Upgrading $name"
-	# Attend que la machine soit éteinte.
-	# Timeout à $time_to_switch +5 minutes, en seconde
-	TIME_OUT=$(($time_to_switch * 60 + 300))
-	wait_period=0
-	while ! ynh_lxc_is_stopped --name=$name
-	do
-		wait_period=$(($wait_period+10))
-		if [ $wait_period -gt $TIME_OUT ];then
-		   break
-		else
-		   sleep 5
-		fi
-	done
-
-	while test -e /var/lib/lxd/$name.lock_fileS; do
-		sleep 5 # Attend que le conteneur soit libéré par le script switch.
-	done
-
-	touch /var/lib/lxd/$name.lock_fileU # Met en place un fichier pour indiquer que la machine est indisponible pendant l'upgrade
-
-	# Supprime les éventuels swap présents.
-	/sbin/swapoff /var/lib/lxd/$name/rootfs/swap_*
-
-	# Restaure le snapshot
-	ynh_lxc_load_snapshot --name=$name --snapname=snap0
-
-	# Démarre le conteneur
-	date >> "$final_path/demo_boot.log"
-
-	# Update
-	update_apt=0
-	ynh_lxc_run_inside --name="$name" --command="apt-get update"
-	ynh_lxc_run_inside --name="$name" --command="apt-get dist-upgrade --dry-run | grep -q "^Inst " > /dev/null" # Vérifie si il y aura des mises à jour.
-	if [ "$?" -eq 0 ]; then
-			date
-			update_apt=1
-			# Upgrade
-			ynh_lxc_run_inside --name="$name" --command="apt-get dist-upgrade --option Dpkg::Options::=--force-confold -yy"
-			# Clean
-			ynh_lxc_run_inside --name="$name" --command="apt-get autoremove -y"
-			ynh_lxc_run_inside --name="$name" --command="apt-get autoclean"
-	fi
-	ynh_lxc_run_inside --name="$name" --command="yunohost tools update"
-	ynh_lxc_run_inside --name="$name" --command="yunohost tools upgrade system"
-
-	# Exécution des scripts de upgrade.d
-	LOOP=$((LOOP + 1))
-	while read LIGNE
-	do
-		if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && [ ! "$LIGNE" == "Constant_upgrade" ] && ! echo "$LIGNE" | grep -q ".fail$" # Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
-		then
-			date
-			# Exécute chaque script trouvé dans upgrade.d
-			ynh_print_info --message="Exécution du script $LIGNE sur le conteneur $name"
-			/bin/bash "$final_path/upgrade.d/$LIGNE" $name
-			if [ "$?" -ne 0 ]; then # Si le script a échoué, le snapshot est annulé.
-				ynh_print_info --message="Échec du script $LIGNE"
-				mv -f "$final_path/upgrade.d/$LIGNE" "$final_path/upgrade.d/$LIGNE.fail"
-				ynh_print_info --message="Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $name sur le serveur de demo $DOMAIN!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré.\n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_upgrade.log")" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
-				update_apt=0
-			else
-				ynh_print_info --message="Le script $LIGNE a été exécuté sans erreur"
-				update_apt=1
-			fi
-		fi
-	done <<< "$(ls -1 "$final_path/upgrade.d")"
-
-	# Exécution des scripts de upgrade.d/Constant_upgrade
-	while read LIGNE
-	do
-		if [ "$update_apt" -eq "1" ]
-		then
-			date
-			# Exécute chaque script trouvé dans upgrade.d/Constant_upgrade
-			ynh_print_info --message="Exécution du script $LIGNE sur le conteneur $name"
-			/bin/bash "$final_path/upgrade.d/Constant_upgrade/$LIGNE" $name
-			if [ "$?" -ne 0 ]; then
-				ynh_print_info --message="Échec du script $LIGNE"
-				ynh_print_info --message="Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $name sur le serveur de demo $DOMAIN!\n"
-			else
-				ynh_print_info --message="Le script $LIGNE a été exécuté sans erreur"
-			fi
-		fi
-	done <<< "$(ls -1 "$final_path/upgrade.d/Constant_upgrade")"
-
-	# Upgrade des apps
-	ynh_lxc_run_inside --name="$name" --command="yunohost tools update"
-	ynh_lxc_run_inside --name="$name" --command="systemctl restart nginx"
-	ynh_lxc_run_inside --name="$name" --command="yunohost tools upgrade apps"
-	ynh_lxc_run_inside --name="$name" --command="systemctl restart nginx"
-
-	# Arrêt de la machine virtualisée
-	ynh_lxc_stop --name=$name
-
-	if [ "$update_apt" -eq "1" ]
-	then
-		# Archivage du snapshot
-		ynh_exec_warn_less tar -cz --acls --xattrs -f /var/lib/lxd/snapshots/$name/snap0.tar.gz /var/lib/lxd/snapshots/$name/snap0
-		# Remplacement du snapshot
-		ynh_lxc_create_snapshot --name=$name --snapname=snap0
-
-		if [ "$LOOP" -eq 2 ]
-		then	# Après l'upgrade du 2e conteneur, déplace les scripts dans le dossier des anciens scripts si ils ont été exécutés avec succès.
-			ls -1 "$final_path/upgrade.d" | while read LIGNE
-			do
-				if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && [ ! "$LIGNE" == "Constant_upgrade" ] && ! echo "$LIGNE" | grep -q ".fail$" # Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
-				then
-					mv -f "$final_path/upgrade.d/$LIGNE" "$final_path/upgrade.d/old_scripts/$LIGNE"
-				fi
-			done
-		fi
-	fi
-	ynh_secure_remove --file="/var/lib/lxd/$name.lock_fileU"	# Libère le lock, la machine est à nouveau disponible
-	ynh_print_info --message="Finished upgrading $name"
 }

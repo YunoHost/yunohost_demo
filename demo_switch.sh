@@ -7,6 +7,7 @@
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
 source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
 source /usr/share/yunohost/helpers
 
 app=${__APP__:-yunohost_demo}
@@ -49,7 +50,7 @@ fi
 
 ynh_print_info --message="> Starting $LXC_B"
 # Démarre le conteneur B et arrête le conteneur A.
-ynh_lxc_start_as_demo --name=$LXC_B --ip=$IP_B
+ynh_lxc_demo_start --name=$LXC_B --ip=$IP_B
 sleep 5	# Attend 10 seconde pour s'assurer du démarrage de la machine.
 if ! ynh_lxc_is_started --name=$LXC_B
 then
@@ -63,12 +64,12 @@ else
 	# Automatique par nginx lorsque la machine A sera éteinte.
 	# Arrêt du conteneur A. Il est remplacé par le B
 	touch /var/lib/lxd/$LXC_A.lock_fileS	# Met en place un fichier pour indiquer que la machine n'est pas encore dispo.
-	ynh_lxc_stop_as_demo --name=$LXC_A
+	ynh_lxc_demo_stop --name=$LXC_A
 	# Supprime les éventuels swap présents.
 	/sbin/swapoff /var/lib/lxd/$LXC_A/rootfs/swap_*
 	ynh_print_info --message="> Restauring $LXC_A from snapshot"
 	# Restaure le snapshot de la machine A avant sa prochaine exécution
-	ynh_lxc_load_snapshot --name=$LXC_A --snapname=snap0
+	ynh_lxc_snapshot_load --name=$LXC_A --snapname=snap0
 	ynh_lxc_stop --name=$LXC_A
 	ynh_secure_remove --file="/var/lib/lxd/$LXC_A.lock_fileS"	# Libère le lock
 	ynh_print_info --message="> Finish restoring $LXC_A"
