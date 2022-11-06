@@ -1,42 +1,39 @@
-# Scripts de gestion et mise en place des serveurs de demo Yunohost sous LXC
+# Installation and management scripts for YunoHost demo servers using LXD
 
-## Prérequis
-* `apt install sudo git nginx -y`
-* register a dns name to your demo server and make you demo server available from internet for TCP/80 and TCP/443
+## Requirements
+* A debian server
+* Register a dns name to your demo server and make you demo server available from internet for TCP/80 and TCP/443
 
 ## demo_lxc_build_init
-Ce script prépare le serveur hôte à recevoir les conteneurs LXC de demo.  
-Il doit être exécuté une seule fois et en premier.
+This script will install YunoHost and the app yunohost_demo_ynh
 
 ## demo_lxc_build
-Ce script construit les conteneurs de demo et les paramètres.  
-Il met également en places les crons et démarre le 1er conteneur.  
-Après l'exécution de ce script, la demo est en place.
+This script will build the demo containers.
+It also install crons and start the first container.
+After executing this script, YunoHost demo is working.
 
 ## demo_lxc_destroy
-Ce script arrête les conteneurs et les détruits.  
-Il sert en général à une reconstruction des conteneurs avec de nouveaux paramètres. Et devrait donc être suivi du script demo_lxc_build.
+This script stop the containers and destroy them.
+It is usually used for rebuilding containers with new parameters. And should therefore be followed by the demo_lxc_build script.
 
 ## demo_lxc_remove
-Ce script, après avoir appelé demo_lxc_destroy va désinstaller LXC et remettre le serveur à son état d'origine. Retirant les paramétrages mis en place pour la demo.  
-Il ne devrait être utilisé qu'en cas de changement de serveur hôte.
+This script will remove yunohost_demo_ynh.
+It should only be used when the host server is changed.
 
 ## demo_start
-Permet simplement un démarrage propre du 1er conteneur. Avec la mise en place du bridge réseau et des règles de parefeu.
+Simply allows a clean start of the first container. With network bridge and firewall rules in place.
 
 ## demo_stop
-Arrête proprement les conteneurs et désactive la config réseau spécifique.
+Cleanly shuts down containers and disables the specific network config.
 
 ## demo_switch
-Ce script est placé en cron par demo_lxc_build.  
-Il va alterner toutes les 30 minutes (par défaut) les 2 conteneurs et rétablir le snapshot du conteneurs après son extinction.
+It will alternate every 30 minutes (by default) the 2 containers and restore the snapshot of the container after it is shut down.
 
 ## demo_upgrade
-Ce script est placé en cron par demo_lxc_build.  
-demo_upgrade vérifie chaque nuit les mises à jour sur les conteneurs, et les applique le cas échéant. Si nécessaire, il se charge également de refaire le snapshot.
+It checks every night for updates on the containers, and applies them if necessary. If necessary, it also takes care of redoing the snapshot.
 
 ## demo_restore_crash
-Tente de réparer les conteneurs qui ne démarre pas à partir des snapshots ou des archives de snapshots précédents.
+Attempts to repair containers that do not boot from previous snapshots or snapshot archives.
 
-Pour effectuer des modifications pérennes sur les conteneurs, il est possible d'ajouter des scripts dans le dossier upgrade.d. Ces scripts seront exécutés après l'upgrade des packages dans chaque conteneur.
-En cas d'échec d'exécution, le script sera mis de côté en attendant sa correction. Sinon, il sera archivé.
+To make permanent changes to the containers, it is possible to add scripts to the upgrade.d folder. These scripts will be executed after the upgrade of the packages in each container.
+In case of execution failure, the script will be put aside until it is corrected. Otherwise, it will be archived.

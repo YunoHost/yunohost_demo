@@ -3,12 +3,23 @@
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-MACHINE=$1      # Nom du conteneur
+source $script_dir/../../ynh_lxd
+source /usr/share/yunohost/helpers
 
+app=${__APP__:-yunohost_demo}
+final_path=$(ynh_app_setting_get --app=$app --key=final_path)
+demo_user=$(ynh_app_setting_get --app=$app --key=demo_user)
+demo_password=$(ynh_app_setting_get --app=$app --key=demo_password)
+
+MACHINE=$1	# Nom du conteneur
+
+# Active le mode démo de la webadmin / TO BE IMPLEMENTED
+#ynh_lxc_run_inside --name="$lxc_name1" --command="yunohost settings set demo 1"
 # Indique le couple login/mot de passe demo/demo
 # Et ajoute demo/demo par défaut dans les champs d'identification
-sed -i "s/id=\"user\" type=\"text\" name=\"user\"/id=\"user\" type=\"text\" name=\"user\" value=\"demo\"/" /var/lib/lxc/$MACHINE/rootfs/usr/share/ssowat/portal/login.html
-sed -i "s/id=\"password\" type=\"password\" name=\"password\"/id=\"password\" type=\"password\" name=\"password\" value=\"demo\"/" /var/lib/lxc/$MACHINE/rootfs/usr/share/ssowat/portal/login.html
-
-#sed -i "17i\&emsp;&emsp;&emsp;Password: $YUNO_PWD" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/login.ms    # Et sur le login admin
-#sed -i "s/type=\"password\" id=\"password\" name=\"password\"/type=\"password\" id=\"password\" name=\"password\" value=\"$YUNO_PWD\"/" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/login.ms
+ynh_lxc_run_inside --name="$MACHINE" --command="sed -i \"3i\<center>Login: $demo_user / Password: $demo_password</center>\" /usr/share/ssowat/portal/login.html" # Sur le login du portail
+ynh_lxc_run_inside --name="$MACHINE" --command="sed -i \"s/id=\"user\" type=\"text\" name=\"user\"/id=\"user\" type=\"text\" name=\"user\" value=\"$demo_user\"/\" /usr/share/ssowat/portal/login.html"
+ynh_lxc_run_inside --name="$MACHINE" --command="sed -i \"s/id=\"password\" type=\"password\" name=\"password\"/id=\"password\" type=\"password\" name=\"password\" value=\"$demo_password\"/\" /usr/share/ssowat/portal/login.html"
+# ainsi que dans la webadmin
+#sed -i "17i\&emsp;&emsp;&emsp;Password: $YUNO_PWD" /var/lib/lxd/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms	# Et sur le login admin
+#sed -i "s/type=\"password\" id=\"password\" name=\"password\"/type=\"password\" id=\"password\" name=\"password\" value=\"$YUNO_PWD\"/" /var/lib/lxd/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/login.ms

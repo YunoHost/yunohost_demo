@@ -6,163 +6,27 @@
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
-LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
-LXC_NAME2=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME2= | cut -d '=' -f2)
-IP_LXC1=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC1= | cut -d '=' -f2)
-IP_LXC2=$(cat "$script_dir/demo_lxc_build.sh" | grep IP_LXC2= | cut -d '=' -f2)
-PLAGE_IP=$(cat "$script_dir/demo_lxc_build.sh" | grep PLAGE_IP= | cut -d '=' -f2)
-TIME_TO_SWITCH=$(cat "$script_dir/demo_lxc_build.sh" | grep TIME_TO_SWITCH= | cut -d '=' -f2)
-MAIL_ADDR=$(cat "$script_dir/demo_lxc_build.sh" | grep MAIL_ADDR= | cut -d '=' -f2)
-DOMAIN=$(cat "$script_dir/domain.ini")
+source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
+source /usr/share/yunohost/helpers
 
-IP_UPGRADE=$PLAGE_IP.150
+app=${__APP__:-yunohost_demo}
+final_path=$(ynh_app_setting_get --app=$app --key=final_path)
+domain=$(ynh_app_setting_get --app=$app --key=domain)
+lxc_name1=$(ynh_app_setting_get --app=$app --key=lxc_name1)
+lxc_name2=$(ynh_app_setting_get --app=$app --key=lxc_name2)
+time_to_switch=$(ynh_app_setting_get --app=$app --key=time_to_switch)
+
 LOOP=0
 
-log_line=$(wc -l "$script_dir/demo_upgrade.log" | cut -d ' ' -f 1)	# Repère la fin du log actuel. Pour récupérer les lignes ajoutées sur cette exécution.
+log_line=$(wc -l "$final_path/demo_upgrade.log" | cut -d ' ' -f 1)	# Repère la fin du log actuel. Pour récupérer les lignes ajoutées sur cette exécution.
 log_line=$(( $log_line + 1 ))	# Ignore la première ligne, reprise de l'ancien log.
-date >> "$script_dir/demo_upgrade.log"
 
-UPGRADE_DEMO_CONTAINER () {		# Démarrage, upgrade et snapshot
-	MACHINE=$1
-	IP_MACHINE=$2
-	echo "Upgrading $MACHINE"
-	# Attend que la machine soit éteinte.
-	# Timeout à $TIME_TO_SWITCH +5 minutes, en seconde
-	TIME_OUT=$(($TIME_TO_SWITCH * 60 + 300))
-	sudo lxc-wait -n $MACHINE -s 'STOPPED' -t $TIME_OUT
+date | tee -a "$final_path/demo_upgrade.log" 2>&1
+ynh_print_info --message=">> Upgrading demo." | tee -a "$final_path/demo_upgrade.log" 2>&1
 
-	while test -e /var/lib/lxc/$MACHINE.lock_fileS; do
-		sleep 5	# Attend que le conteneur soit libéré par le script switch.
-	done
+ynh_lxc_demo_upgrade  --name=$lxc_name1 --time_to_switch=$time_to_switch
+ynh_lxc_demo_upgrade  --name=$lxc_name2 --time_to_switch=$time_to_switch
 
-	sudo touch /var/lib/lxc/$MACHINE.lock_fileU	# Met en place un fichier pour indiquer que la machine est indisponible pendant l'upgrade
-
-	# Supprime les éventuels swap présents.
-	/sbin/swapoff /var/lib/lxc/$MACHINE/rootfs/swap_*
-
-	# Restaure le snapshot
-	sudo lxc-snapshot -r snap0 -n $MACHINE
-
-	# Change l'ip du conteneur le temps de l'upgrade. Pour empêcher HAProxy de basculer sur le conteneur.
-	sudo sed -i "s@address $IP_MACHINE@address $IP_UPGRADE@" /var/lib/lxc/$MACHINE/rootfs/etc/network/interfaces
-
-	# Active le bridge réseau
-	if ! sudo ifquery lxc_demo --state > /dev/null
-	then
-		sudo ifup lxc_demo --interfaces=/etc/network/interfaces.d/lxc_demo
-	fi
-
-	# Configure le parefeu
-	if ! sudo iptables -D FORWARD -i lxc_demo -o eth0 -j ACCEPT 2> /dev/null
-	then
-		sudo iptables -A FORWARD -i lxc_demo -o eth0 -j ACCEPT
-	fi
-	if ! sudo iptables -C FORWARD -i eth0 -o lxc_demo -j ACCEPT 2> /dev/null
-	then
-		sudo iptables -A FORWARD -i eth0 -o lxc_demo -j ACCEPT
-	fi
-	if ! sudo iptables -t nat -C POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE 2> /dev/null
-	then
-		sudo iptables -t nat -A POSTROUTING -s $PLAGE_IP.0/24 -j MASQUERADE
-	fi
-
-	# Démarre le conteneur
-	date >> "$script_dir/demo_boot.log"
-	sudo lxc-start -n $MACHINE -o "$script_dir/demo_boot.log" -d > /dev/null
-	sleep 10
-
-	# Update
-	update_apt=0
-	sudo lxc-attach -n $MACHINE -- apt-get update
-	sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade --dry-run | grep -q "^Inst " > /dev/null	# Vérifie si il y aura des mises à jour.
-	if [ "$?" -eq 0 ]; then
-            date
-            update_apt=1
-            # Upgrade
-            sudo lxc-attach -n $MACHINE -- apt-get dist-upgrade --option Dpkg::Options::=--force-confold -yy
-            # Clean
-            sudo lxc-attach -n $MACHINE -- apt-get autoremove -y
-            sudo lxc-attach -n $MACHINE -- apt-get autoclean
-	fi
-	sudo lxc-attach -n $MACHINE -- yunohost tools update
-	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade system
-
-	# Exécution des scripts de upgrade.d
-	LOOP=$((LOOP + 1))
-	while read LIGNE
-	do
-		if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && [ ! "$LIGNE" == "Constant_upgrade" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
-		then
-			date
-			# Exécute chaque script trouvé dans upgrade.d
-			echo "Exécution du script $LIGNE sur le conteneur $MACHINE"
-			/bin/bash "$script_dir/upgrade.d/$LIGNE" $MACHINE
-			if [ "$?" -ne 0 ]; then	# Si le script a échoué, le snapshot est annulé.
-				echo "Échec du script $LIGNE"
-				mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/$LIGNE.fail"
-				echo -e "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo $DOMAIN!\nLe script a été renommé en .fail, il ne sera plus exécuté tant que le préfixe ne sera pas retiré.\n\nExtrait du log:\n$(tail -n +$log_line "$script_dir/demo_upgrade.log")" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "Demo Yunohost" $MAIL_ADDR
-				update_apt=0
-			else
-				echo "Le script $LIGNE a été exécuté sans erreur"
-				update_apt=1
-			fi
-		fi
-	done <<< "$(ls -1 "$script_dir/upgrade.d")"
-
-	# Exécution des scripts de upgrade.d/Constant_upgrade
-	while read LIGNE
-	do
-		if [ "$update_apt" -eq "1" ]
-		then
-			date
-			# Exécute chaque script trouvé dans upgrade.d/Constant_upgrade
-			echo "Exécution du script $LIGNE sur le conteneur $MACHINE"
-			/bin/bash "$script_dir/upgrade.d/Constant_upgrade/$LIGNE" $MACHINE
-			if [ "$?" -ne 0 ]; then
-				echo "Échec du script $LIGNE"
-				echo -e "Échec d'exécution du script d'upgrade $LIGNE sur le conteneur $MACHINE sur le serveur de demo $DOMAIN!\n"
-			else
-				echo "Le script $LIGNE a été exécuté sans erreur"
-			fi
-		fi
-	done <<< "$(ls -1 "$script_dir/upgrade.d/Constant_upgrade")"
-
-	# Upgrade des apps
-	sudo lxc-attach -n $MACHINE -- yunohost tools update
-	sudo lxc-attach -n $MACHINE -- systemctl restart nginx
-	sudo lxc-attach -n $MACHINE -- yunohost tools upgrade apps
-	sudo lxc-attach -n $MACHINE -- systemctl restart nginx
-
-	# Arrêt de la machine virtualisée
-	sudo lxc-stop -n $MACHINE
-
-	# Restaure l'ip d'origine du conteneur.
-	sudo sed -i "s@address $IP_UPGRADE@address $IP_MACHINE@" /var/lib/lxc/$MACHINE/rootfs/etc/network/interfaces
-
-	if [ "$update_apt" -eq "1" ]
-	then
-		# Archivage du snapshot
-		sudo tar -cz --acls --xattrs -f /var/lib/lxcsnaps/$MACHINE/snap0.tar.gz /var/lib/lxcsnaps/$MACHINE/snap0
-		# Remplacement du snapshot
-		sudo lxc-snapshot -n $MACHINE -d snap0
-		sudo lxc-snapshot -n $MACHINE
-
-		if [ "$LOOP" -eq 2 ]
-		then	# Après l'upgrade du 2e conteneur, déplace les scripts dans le dossier des anciens scripts si ils ont été exécutés avec succès.
-			ls -1 "$script_dir/upgrade.d" | while read LIGNE
-			do
-				if [ ! "$LIGNE" == "exemple" ] && [ ! "$LIGNE" == "old_scripts" ] && [ ! "$LIGNE" == "Constant_upgrade" ] && ! echo "$LIGNE" | grep -q ".fail$"	# Le fichier exemple, le dossier old_scripts et les scripts fail sont ignorés
-				then
-					mv -f "$script_dir/upgrade.d/$LIGNE" "$script_dir/upgrade.d/old_scripts/$LIGNE"
-				fi
-			done
-		fi
-	fi
-	sudo rm /var/lib/lxc/$MACHINE.lock_fileU	# Libère le lock, la machine est à nouveau disponible
-	echo "Finished upgrading $MACHINE"
-}
-
-echo ""
-date
-UPGRADE_DEMO_CONTAINER $LXC_NAME1 $IP_LXC1
-UPGRADE_DEMO_CONTAINER $LXC_NAME2 $IP_LXC2
+date | tee -a "$final_path/demo_upgrade.log" 2>&1
+ynh_print_info --message=">> Finished upgrading demo." | tee -a "$final_path/demo_upgrade.log" 2>&1

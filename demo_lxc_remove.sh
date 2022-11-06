@@ -6,44 +6,34 @@
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$(echo $PWD/$(dirname "$0" | cut -d '.' -f2) | sed 's@/$@@')"; fi
 
-LXC_NAME1=$(cat "$script_dir/demo_lxc_build.sh" | grep LXC_NAME1= | cut -d '=' -f2)
-DOMAIN=$(cat "$script_dir/domain.ini")
+source $script_dir/ynh_lxd
+source $script_dir/ynh_lxd_demo
+source /usr/share/yunohost/helpers
 
-# Check user
-if [ "$USER" != "$(cat "$script_dir/setup_user")" ]; then
-	echo -e "\e[91mCe script doit être exécuté avec l'utilisateur $(cat "$script_dir/setup_user")"
-	echo -en "\e[0m"
-	exit 0
-fi
+app=${__APP__:-yunohost_demo}
+final_path=$(ynh_app_setting_get --app=$app --key=final_path)
+lxc_name1=$(ynh_app_setting_get --app=$app --key=lxc_name1)
+path_url=$(ynh_app_setting_get --app=$app --key=path)
 
-"$script_dir/demo_lxc_destroy.sh"
+echo_bold () {
+	echo -e "\e[1m$1\e[0m"
+}
 
-echo -e "\e[1m> Retire l'ip forwarding.\e[0m"
-sudo rm /etc/sysctl.d/lxc_demo.conf
-sudo sysctl -p
+# -----------------------------------------------------------------
 
-echo -e "\e[1m> Supprime le brige réseau\e[0m"
-sudo rm /etc/network/interfaces.d/lxc_demo
+function remove_yunohost_demo() {
+	echo_bold "> Installation of yunohost_demo..."
+	if yunohost app list --output-as json --quiet | jq -e '.apps[] | select(.id == "yunohost_demo")' >/dev/null
+	then
+		yunohost app remove yunohost_demo --purge
+	fi
+}
 
-echo -e "\e[1m> Remove lxc lxctl\e[0m"
-sudo apt-get remove lxc lxctl
+# =========================
+#  Main stuff
+# =========================
 
-echo -e "\e[1m> Suppression de la clé SSH\e[0m"
-rm -f $HOME/.ssh/$LXC_NAME1 $HOME/.ssh/$LXC_NAME1.pub
-echo -e "\e[1m> Et de sa config spécifique dans $HOME/.ssh/config\e[0m"
-BEGIN_LINE=$(cat $HOME/.ssh/config | grep -n "^# ssh $LXC_NAME1" | cut -d':' -f 1)
-sed -i "$BEGIN_LINE,/^# End ssh $LXC_NAME1/d" $HOME/.ssh/config
+remove_yunohost_demo
 
-# Suppression du reverse proxy
-echo -e "\e[1m> Suppression de la config nginx\e[0m"
-sudo rm /etc/nginx/conf.d/$DOMAIN.conf
-sudo service nginx reload
-
-# Suppression du certificat Let's encrypt
-echo -e "\e[1m> Suppression de Let's encrypt\e[0m"
-sudo rm -r /etc/letsencrypt
-sudo rm -r ~/.local/share/letsencrypt
-sudo rm -r ~/letsencrypt
-sudo rm -r /var/lib/letsencrypt
-# Supprime la tache cron
-sudo rm /etc/cron.weekly/Certificate_Renewer
+echo "Done!"
+echo " "

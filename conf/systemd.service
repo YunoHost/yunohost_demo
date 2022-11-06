@@ -1,0 +1,14 @@
+[Unit]
+Description=Start and stop script for LXC demo container
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/bin/bash __FINAL_PATH__/demo_start.sh
+RemainAfterExit=true
+ExecStop=/bin/bash __FINAL_PATH__/demo_stop.sh
+ExecReload=/bin/bash __FINAL_PATH__/demo_start.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -3,7 +3,7 @@
 # Récupère le dossier du script
 if [ "${0:0:1}" == "/" ]; then script_dir="$(dirname "$0")"; else script_dir="$PWD/$(dirname "$0" | cut -d '.' -f2)"; fi
 
-MACHINE=$1      # Nom du conteneur
+MACHINE=$1	# Nom du conteneur
 
 # Désactive l'ajout de domaine, pour éviter surtout les nohost
-#sed -i "s@<input type=\"submit\" role=\"button\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">@<input type=\"\" role=\"\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">@g" /var/lib/lxc/$MACHINE/rootfs/usr/share/yunohost/admin/views/domain/domain_add.ms
+#sed -i "s@<input type=\"submit\" role=\"button\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">@<input type=\"\" role=\"\" class=\"btn btn-success slide back\" value=\"{{t 'add'}}\">@g" /var/lib/lxd/yunohost_demo1/rootfs/usr/share/yunohost/admin/views/domain/domain_add.ms
