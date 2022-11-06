@@ -15,18 +15,25 @@ final_path=$(ynh_app_setting_get --app=$app --key=final_path)
 lxc_name1=$(ynh_app_setting_get --app=$app --key=lxc_name1)
 path_url=$(ynh_app_setting_get --app=$app --key=path)
 
-/bin/bash "$final_path/demo_lxc_destroy.sh"
+echo_bold () {
+	echo -e "\e[1m$1\e[0m"
+}
 
-# Suppression du reverse proxy
-echo -e "> Suppression de la config nginx"
-sudo rm /etc/nginx/conf.d/$DOMAIN.conf
-sudo service nginx reload
+# -----------------------------------------------------------------
 
-# Suppression du certificat Let's encrypt
-echo -e "> Suppression de Let's encrypt"
-sudo rm -r /etc/letsencrypt
-sudo rm -r ~/.local/share/letsencrypt
-sudo rm -r ~/letsencrypt
-sudo rm -r /var/lib/letsencrypt
-# Supprime la tache cron
-sudo rm /etc/cron.weekly/Certificate_Renewer
+function remove_yunohost_demo() {
+	echo_bold "> Installation of yunohost_demo..."
+	if yunohost app list --output-as json --quiet | jq -e '.apps[] | select(.id == "yunohost_demo")' >/dev/null
+	then
+		yunohost app remove yunohost_demo --purge
+	fi
+}
+
+# =========================
+#  Main stuff
+# =========================
+
+remove_yunohost_demo
+
+echo "Done!"
+echo " "
