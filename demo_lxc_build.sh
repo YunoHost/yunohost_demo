@@ -133,11 +133,11 @@ if [ "$?" -ne 0 ]; then	# Si l'utilisateur tarde trop, la connexion sera refusé
 fi
 
 # Fix ssh common issues with stretch "No supported key exchange algorithms"
-sudo lxc-attach -n $LXC_NAME -- dpkg-reconfigure openssh-server  >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- dpkg-reconfigure openssh-server  >> "$LOG_BUILD_LXC" 2>&1
 
 # Fix locales issue
-sudo lxc-attach -n $LXC_NAME -- locale-gen en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
-sudo lxc-attach -n $LXC_NAME -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- locale-gen en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Installation de Yunohost...\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo /bin/bash -c \"curl https://install.yunohost.org/$DIST | bash -s -- -a -d stable\"" | tee -a "$LOG_BUILD_LXC" 2>&1
