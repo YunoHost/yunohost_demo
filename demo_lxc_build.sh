@@ -146,7 +146,7 @@ sudo lxc-attach -n $LXC_NAME1 -- bash -c 'echo "admin_strength: -1" >> /etc/yuno
 sudo lxc-attach -n $LXC_NAME1 -- bash -c 'echo "user_strength: -1" >> /etc/yunohost/settings.yml'
 echo -e "\e[1m> Post install Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo systemctl start dbus.service" | tee -a "$LOG_BUILD_LXC" 2>&1
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD --force-password" | tee -a "$LOG_BUILD_LXC" 2>&1
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --username $USER_DEMO --fullname $USER_DEMO --password $YUNO_PWD" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Fix SSH access\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-attach -n $LXC_NAME1 -- sed -i "s/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root ssh_demo/" /etc/ssh/sshd_config >> "$LOG_BUILD_LXC" 2>&1
