@@ -168,7 +168,7 @@ echo -e "\e[36mInstallation de baikal\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install baikal --force --args \"domain=$DOMAIN&path=/baikal&password=$PASSWORD_DEMO\"" | tee -a "$LOG_BUILD_LXC"
 # Agendav
 echo -e "\e[36mInstallation d'agendav\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav --force --args \"domain=$DOMAIN&path=/agendav&language=en\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav --force --args \"domain=$DOMAIN&path=/agendav&language=en&init_main_permission=all_users\"" | tee -a "$LOG_BUILD_LXC"
 # Dokuwiki
 echo -e "\e[36mInstallation de dokuwiki\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki --force --args \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&init_main_permission=visitors&language=en\"" | tee -a "$LOG_BUILD_LXC"
@@ -186,7 +186,7 @@ echo -e "\e[36mInstallation de kanboard\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard --force --args \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Nextcloud
 echo -e "\e[36mInstallation de nextcloud\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud --force --args \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud --force --args \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0&init_main_permission=visitors&system_addressbook_exposed=yes\"" | tee -a "$LOG_BUILD_LXC"
 # Opensondage
 echo -e "\e[36mInstallation de opensondage\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage --force --args \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
@@ -195,13 +195,10 @@ echo -e "\e[36mInstallation de phpmyadmin\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install phpmyadmin --force --args \"domain=$DOMAIN&path=/phpmyadmin&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
 # Piwigo
 echo -e "\e[36mInstallation de piwigo\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo --force --args \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&init_main_permission=visitors&language=en\"" | tee -a "$LOG_BUILD_LXC"
-# Rainloop
-echo -e "\e[36mInstallation de rainloop\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop --force --args \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&language=en\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo --force --args \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&password=$PASSWORD_DEMO&init_main_permission=visitors&language=en_UK\"" | tee -a "$LOG_BUILD_LXC"
 # Roundcube
 echo -e "\e[36mInstallation de roundcube\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube --force --args \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0&language=en_GB\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube --force --args \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0&language=en_GB&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Searx
 echo -e "\e[36mInstallation de searx\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx --force --args \"domain=$DOMAIN&path=/searx&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
@@ -213,13 +210,13 @@ echo -e "\e[36mInstallation de strut\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut --force --args \"domain=$DOMAIN&path=/strut&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Transmission
 echo -e "\e[36mInstallation de transmission\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission --force --args \"domain=$DOMAIN&path=/torrent\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission --force --args \"domain=$DOMAIN&path=/torrent&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Ttrss
 echo -e "\e[36mInstallation de ttrss\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss --force --args \"domain=$DOMAIN&path=/ttrss&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Wallabag
 echo -e "\e[36mInstallation de wallabag\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 --force --args \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 --force --args \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO&init_main_permission=all_users\"" | tee -a "$LOG_BUILD_LXC"
 # Wordpress
 echo -e "\e[36mInstallation de wordpress\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress --force --args \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_US&multisite=0&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
