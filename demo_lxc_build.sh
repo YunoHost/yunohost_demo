@@ -133,31 +133,27 @@ if [ "$?" -ne 0 ]; then	# Si l'utilisateur tarde trop, la connexion sera refusé
 fi
 
 # Fix ssh common issues with stretch "No supported key exchange algorithms"
-sudo lxc-attach -n $LXC_NAME -- dpkg-reconfigure openssh-server  >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- dpkg-reconfigure openssh-server  >> "$LOG_BUILD_LXC" 2>&1
 
 # Fix locales issue
-sudo lxc-attach -n $LXC_NAME -- locale-gen en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
-sudo lxc-attach -n $LXC_NAME -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- locale-gen en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
+sudo lxc-attach -n $LXC_NAME1 -- localedef -i en_US -f UTF-8 en_US.UTF-8 >> "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Installation de Yunohost...\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo /bin/bash -c \"curl https://install.yunohost.org/$DIST | bash -s -- -a -d stable\"" | tee -a "$LOG_BUILD_LXC" 2>&1
+echo -e "\e[1m> Disable password strength\e[0m" | tee -a "$LOG_BUILD_LXC"
+sudo lxc-attach -n $LXC_NAME1 -- bash -c 'echo "admin_strength: -1" >> /etc/yunohost/settings.yml'
+sudo lxc-attach -n $LXC_NAME1 -- bash -c 'echo "user_strength: -1" >> /etc/yunohost/settings.yml'
 echo -e "\e[1m> Post install Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo systemctl start dbus.service" | tee -a "$LOG_BUILD_LXC" 2>&1
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --password $YUNO_PWD --force-password" | tee -a "$LOG_BUILD_LXC" 2>&1
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost tools postinstall --domain $DOMAIN --username $USER_DEMO --fullname $USER_DEMO --password $YUNO_PWD" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 echo -e "\e[1m> Fix SSH access\e[0m" | tee -a "$LOG_BUILD_LXC"
 sudo lxc-attach -n $LXC_NAME1 -- sed -i "s/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root/AllowGroups ssh.main sftp.main ssh.app sftp.app admins root ssh_demo/" /etc/ssh/sshd_config >> "$LOG_BUILD_LXC" 2>&1
 sudo lxc-attach -n $LXC_NAME1 -- service sshd restart >> "$LOG_BUILD_LXC" 2>&1
 
-echo -e "\e[1m> Disable password strength\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost settings set security.password.user.strength -v -1" | tee -a "$LOG_BUILD_LXC"
-
-USER_DEMO_CLEAN=${USER_DEMO//"_"/""}
-echo -e "\e[1m> Ajout de l'utilisateur de demo\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost user create \"$USER_DEMO\" --firstname \"$USER_DEMO_CLEAN\" --lastname \"$USER_DEMO_CLEAN\" --domain \"$DOMAIN\" --password \"$PASSWORD_DEMO\""
-
 echo -e "\e[1m\n> Vérification de l'état de Yunohost\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost -v" | tee -a "$LOG_BUILD_LXC" 2>&1
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost --version" | tee -a "$LOG_BUILD_LXC" 2>&1
 
 # ********
 echo -e "\e[1m>> Modification de Yunohost pour la demo\e[0m" | tee -a "$LOG_BUILD_LXC"
@@ -166,70 +162,67 @@ echo -e "\e[1m>> Modification de Yunohost pour la demo\e[0m" | tee -a "$LOG_BUIL
 echo -e "\e[1m> Installation des applications officielles\e[0m" | tee -a "$LOG_BUILD_LXC"
 # Ampache
 echo -e "\e[36mInstallation de Ampache\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ampache --force --args \"domain=$DOMAIN&path=/ampache&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ampache --force --args \"domain=$DOMAIN&path=/ampache&admin=$USER_DEMO&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Baikal
 echo -e "\e[36mInstallation de baikal\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install baikal --force --args \"domain=$DOMAIN&path=/baikal&password=$PASSWORD_DEMO\"" | tee -a "$LOG_BUILD_LXC"
 # Agendav
 echo -e "\e[36mInstallation d'agendav\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav --force --args \"domain=$DOMAIN&path=/agendav&language=en\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install agendav --force --args \"domain=$DOMAIN&path=/agendav&language=en&init_main_permission=all_users\"" | tee -a "$LOG_BUILD_LXC"
 # Dokuwiki
 echo -e "\e[36mInstallation de dokuwiki\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki --force --args \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install dokuwiki --force --args \"domain=$DOMAIN&path=/dokuwiki&admin=$USER_DEMO&init_main_permission=visitors&language=en\"" | tee -a "$LOG_BUILD_LXC"
 # Etherpad
 echo -e "\e[36mInstallation de etherpad\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads --force --args \"domain=$DOMAIN&path=/etherpad&admin=$USER_DEMO&password=administration&language=en&is_public=1&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install etherpad_mypads --force --args \"domain=$DOMAIN&path=/etherpad&admin=$USER_DEMO&password=administration&language=en&init_main_permission=visitors&export=none&mypads=1&useldap=0\"" | tee -a "$LOG_BUILD_LXC"
 # Hextris
 echo -e "\e[36mInstallation de hextris\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install hextris --force --args \"domain=$DOMAIN&path=/hextris&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install hextris --force --args \"domain=$DOMAIN&path=/hextris&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Jirafeau
 echo -e "\e[36mInstallation de jirafeau\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install jirafeau --force --args \"domain=$DOMAIN&path=/jirafeau&admin_user=$USER_DEMO&upload_password=$PASSWORD_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install jirafeau --force --args \"domain=$DOMAIN&path=/jirafeau&admin_user=$USER_DEMO&upload_password=$PASSWORD_DEMO&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Kanboard
 echo -e "\e[36mInstallation de kanboard\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard --force --args \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install kanboard --force --args \"domain=$DOMAIN&path=/kanboard&admin=$USER_DEMO&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Nextcloud
 echo -e "\e[36mInstallation de nextcloud\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud --force --args \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install nextcloud --force --args \"domain=$DOMAIN&path=/nextcloud&admin=$USER_DEMO&user_home=0&init_main_permission=visitors&system_addressbook_exposed=yes\"" | tee -a "$LOG_BUILD_LXC"
 # Opensondage
 echo -e "\e[36mInstallation de opensondage\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage --force --args \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install opensondage --force --args \"domain=$DOMAIN&path=/date&admin=$USER_DEMO&language=en&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Phpmyadmin
 echo -e "\e[36mInstallation de phpmyadmin\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install phpmyadmin --force --args \"domain=$DOMAIN&path=/phpmyadmin&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
 # Piwigo
 echo -e "\e[36mInstallation de piwigo\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo --force --args \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&is_public=1&language=en\"" | tee -a "$LOG_BUILD_LXC"
-# Rainloop
-echo -e "\e[36mInstallation de rainloop\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install rainloop --force --args \"domain=$DOMAIN&path=/rainloop&is_public=No&password=$PASSWORD_DEMO&ldap=Yes&language=en\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install piwigo --force --args \"domain=$DOMAIN&path=/piwigo&admin=$USER_DEMO&password=$PASSWORD_DEMO&init_main_permission=visitors&language=en_UK\"" | tee -a "$LOG_BUILD_LXC"
 # Roundcube
 echo -e "\e[36mInstallation de roundcube\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube --force --args \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0&language=en_GB\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install roundcube --force --args \"domain=$DOMAIN&path=/webmail&with_carddav=0&with_enigma=0&language=en_GB&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Searx
 echo -e "\e[36mInstallation de searx\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx --force --args \"domain=$DOMAIN&path=/searx&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install searx --force --args \"domain=$DOMAIN&path=/searx&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Shellinabox
 echo -e "\e[36mInstallation de shellinabox\e[0m" | tee -a "$LOG_BUILD_LXC"
 ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install shellinabox --force --args \"domain=$DOMAIN&path=/ssh\"" | tee -a "$LOG_BUILD_LXC"
 # Strut
 echo -e "\e[36mInstallation de strut\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut --force --args \"domain=$DOMAIN&path=/strut&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install strut --force --args \"domain=$DOMAIN&path=/strut&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Transmission
 echo -e "\e[36mInstallation de transmission\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission --force --args \"domain=$DOMAIN&path=/torrent\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install transmission --force --args \"domain=$DOMAIN&path=/torrent&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Ttrss
 echo -e "\e[36mInstallation de ttrss\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss --force --args \"domain=$DOMAIN&path=/ttrss&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install ttrss --force --args \"domain=$DOMAIN&path=/ttrss&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Wallabag
 echo -e "\e[36mInstallation de wallabag\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 --force --args \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wallabag2 --force --args \"domain=$DOMAIN&path=/wallabag&admin=$USER_DEMO&init_main_permission=all_users\"" | tee -a "$LOG_BUILD_LXC"
 # Wordpress
 echo -e "\e[36mInstallation de wordpress\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress --force --args \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_US&multisite=0&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install wordpress --force --args \"domain=$DOMAIN&path=/blog&admin=$USER_DEMO&language=en_US&multisite=0&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 # Zerobin
 echo -e "\e[36mInstallation de zerobin\e[0m" | tee -a "$LOG_BUILD_LXC"
-ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install zerobin --force --args \"domain=$DOMAIN&path=/zerobin&is_public=1\"" | tee -a "$LOG_BUILD_LXC"
+ssh $ARG_SSH $LXC_NAME1 "sudo yunohost app install zerobin --force --args \"domain=$DOMAIN&path=/zerobin&init_main_permission=visitors\"" | tee -a "$LOG_BUILD_LXC"
 
 # Désactive l'accès à shellinabox
 sudo rm "/var/lib/lxc/$LXC_NAME1/rootfs/etc/nginx/conf.d/$DOMAIN.d/shellinabox.conf"	# Supprime le fichier de conf nginx de shellinabox pour empêcher d'y accéder.
